@@ -10,7 +10,7 @@ This repository is in development stage, and comes with no guarantees.
 `FastQC` https://www.bioinformatics.babraham.ac.uk/projects/fastqc/    
 `multiQC` https://multiqc.info/      
 `stacks_workflow` https://github.com/enormandeau/stacks_workflow    
-`plink` https://zzz.bwh.harvard.edu/plink/download.shtml      
+`plink` https://zzz.bwh.harvard.edu/plink/plink2.shtml      
 
 _note: see R scripts for individual package requirements_
 
