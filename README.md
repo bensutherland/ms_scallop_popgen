@@ -105,3 +105,14 @@ Update the number of cores, then run:
 Update to ensure output of plink files, then run:      
 `00-scripts/stacks2_populations_reference.sh`      
 
+### c. Convert output plink files
+Convert output plink files to useable format for adegenet:        
+`plink --ped 05-stacks/populations.plink.ped --map 05-stacks/populations.plink.map --maf 0.01 --recode A --allow-extra-chr --out 05-stacks/populations_single_snp`       
+Note: --recode creates a new text fileset, and the A modifier causes additive (0/1/2) format to be generated, which is useful for input into R.           
+Will output `05-stacks/populations_single_snp.raw`      
+
+
+## 4. Genetic analysis in R
+
+
+
