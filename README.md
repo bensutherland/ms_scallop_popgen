@@ -109,10 +109,18 @@ Update to ensure output of plink files, then run:
 Convert output plink files to useable format for adegenet:        
 `plink --ped 05-stacks/populations.plink.ped --map 05-stacks/populations.plink.map --maf 0.01 --recode A --allow-extra-chr --out 05-stacks/populations_single_snp`       
 Note: --recode creates a new text fileset, and the A modifier causes additive (0/1/2) format to be generated, which is useful for input into R.           
-Will output `05-stacks/populations_single_snp.raw`      
+Will output `05-stacks/populations_single_snp.raw`, which is the input file in the R code for the analysis.      
 
 
 ## 4. Genetic analysis in R
+Open and run interactively:       
+`ms_scallop_popgen/01_scripts/pyes_popgen_analysis.R`        
+note: this will assume you have the `*.raw` file in your folder `05-stacks`, and will output results into `stacks_workflow/12-results`.     
+
+Initial steps will allow you to view the minor allele frequency, and to convert the genlight file into a genind. After the data is in genind format, proceed to `simple_pop_stats`.         
+
+
+
 
 
 
