@@ -6,8 +6,8 @@
 # rm(list=ls())
 
 ## Install and load packages
-install.packages("rstudioapi")
-install.packages("adegenet")
+#install.packages("rstudioapi")
+#install.packages("adegenet")
 
 library("rstudioapi")
 library("adegenet")
@@ -49,23 +49,25 @@ pop(my.data) <- gsub(pattern = 3, replacement = "JPN", x = pop(my.data))
 # unique(pop(my.data)) # What pops?
 
 
-#### 2. Minor allele freq ####
+#### 2. Data exploration (allele frequency) ####
 # Plot instances of minor allele across individuals and loci
-png(file = paste0(output.dir, "/glPlot_all.png"), width = 924, height = 600)
+png(file = paste0(output.dir, "/", "glPlot.png"), width = 924, height = 600)
 glPlot(x = my.data, posi="topleft") 
 dev.off()
 
 # Create density plot of minor allele frequencies
-pdf(file = paste0(output.dir, "/maf_hist_all.pdf"), width = 6, height = 4)
+pdf(file = paste0(output.dir, "/", "maf_hist.pdf"), width = 6, height = 4)
 myFreq <- glMean(my.data)
-hist(myFreq, proba=T, col="gold", xlab = "Allele frequencies"
+hist(myFreq
+     #, proba=T # note: does not sum to 1, not worth using
+     , col="gold", xlab = "Minor allele frequency (MAF)"
      , main = ""
-     , ylim = c(0,50)
-     , ylab = "Density of second allele frequencies"
+     , ylim = c(0, 2500)
+     , ylab = "Number of loci"
+     , las = 1
+     , breaks = 20
      )
-text(x = 0.4, y = 7, labels = paste(nLoc(my.data), " loci", sep = "" ))
-temp <- density(myFreq)
-lines(temp$x, temp$y, lwd=3)
+text(x = 0.4, y = 1500, labels = paste("n = ", nLoc(my.data), " loci", sep = "" ))
 dev.off()
 
 
@@ -85,7 +87,9 @@ my.data.gid <- df2genind(my.data.mat, sep = "/", ploidy = 2) # convert df to gen
 
 # Transfer pop attributes
 pop(my.data.gid) <- pop(my.data) 
+unique(pop(my.data.gid))
 
 # Data is now a genind, and therefore can be used with simple_pop_stats
+save(my.data.gid, file="../simple_pop_stats_pyes/02_input_data/yesso_scallop_genind_2022-12-05.RData")
 
-
+# Next go to "ms_scallop_popgen/01_scripts/pyes_popgen_simple_pop_stats.R"
