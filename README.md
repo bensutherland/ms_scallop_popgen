@@ -99,7 +99,7 @@ note: you can now go back and recalculate sample stats if you choose, but save t
 ## 3. Genotype
 ### a. Run Stacks v.2.0 genotyper    
 Update the number of cores, then run:      
-`00_scripts/stacks2_populations_reference.sh`        
+`00_scripts/stacks2_gstacks_reference.sh`        
 
 ### b. Filter using the populations module      
 Update to ensure output of plink files, then run:      
