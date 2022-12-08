@@ -1,0 +1,293 @@
+# simple_pop_stats component of the Yesso scallop RADseq analysis
+# B. Sutherland
+# Initialized 2022-12-05
+# Requires running "ms_scallop_popgen/01_scripts/pyes_popgen_analysis.R" first
+
+# Source simple_pop_stats and choose Yesso scallop
+
+#### 01. Load Data ####
+load(file = "02_input_data/yesso_scallop_genind_2022-12-05.RData") # loaded from prerequisite script above
+datatype <- "SNP" # normally assigned by load_genepop() when input is a genepop
+
+obj <- my.data.gid
+obj
+
+#### 02. Prepare Data ####
+
+unique(pop(obj))
+
+characterize_genepop(obj)
+
+## Population colours
+pops_in_genepop <- unique(pop(obj))
+pops_in_genepop.df <- as.data.frame(pops_in_genepop)
+
+## Download colours file from previous git repo to see previously used colours in Pacific oyster
+# url = "https://raw.githubusercontent.com/bensutherland/ms_oyster_popgen/master/00_archive/my_cols.csv" # only need to run once
+# destfile <- "00_archive/my_cols.csv"
+# download.file(url, destfile)   # only need to run once
+#my_colours <- read.csv(destfile)
+
+# Manually write
+pop_colours <- matrix(c("BC", "JPN", "VIU", "purple1", "turquoise4", "red"), nrow = 3, ncol = 2)
+colnames(pop_colours) <- c("my.pops", "my.cols")
+
+# Connect colours to empirical populations
+colours <- merge(x = pops_in_genepop.df, y =  pop_colours, by.x = "pops_in_genepop", by.y = "my.pops"
+                 #, sort = F
+                 , all.x = T
+)
+colours
+
+
+#### 03. Characterize missing data (indiv and loci) and filter ####
+##### 03.1 Individuals - missing data #####
+percent_missing_by_ind(df = obj)
+head(missing_data.df)
+
+missing_data.df$pop <- rep(x = NA, times = nrow(missing_data.df))
+missing_data.df$pop[grep(pattern = "BC", x = missing_data.df$ind)] <- "BC"
+missing_data.df$pop[grep(pattern = "JPN", x = missing_data.df$ind)] <- "JPN"
+missing_data.df$pop[grep(pattern = "VIU", x = missing_data.df$ind)] <- "VIU"
+table(missing_data.df$pop)
+
+head(missing_data.df)
+
+# Combine colours to dataframe for plotting, don't sort
+colours
+plot_cols.df <- merge(x = missing_data.df, y = colours, by.x = "pop", by.y = "pops_in_genepop", all.x = T
+                      , sort = F
+)
+
+# Plot missing data by individual
+pdf(file = "03_results/geno_rate_by_ind.pdf", width = 8, height = 5)
+plot(1 - plot_cols.df$ind.per.missing, ylab = "Genotyping percentage"
+     , col = plot_cols.df$my.cols
+     , las = 1
+     , xlab = "Individual"
+     , ylim = c(0,1)
+)
+
+abline(h = 0.5, lty = 3)
+
+legend("bottomright", legend = unique(plot_cols.df$pop)
+       , fill = unique(plot_cols.df$my.cols)
+       , cex = 1.0
+       , bg = "white"
+)
+dev.off()
+
+# Save the percent missing by individual
+write_delim(x = missing_data.df, file = "03_results/geno_rate_by_ind.txt"
+            , delim = "\t")
+
+
+# Temporary fix
+obj.df <- missing_data.df
+head(obj.df)
+
+## Filter individuals
+# Keep inds with 70% genotyping rate (% missing < 0.3)
+keep <- obj.df[obj.df$ind.per.missing < 0.3, "ind"]
+
+length(keep)
+nInd(obj)
+
+obj.filt <- obj[(keep)]
+obj.filt
+table(pop(obj.filt))
+
+
+##### 03.2 Loci - missing data #####
+# Filter loci based on missing data
+obj.df <- genind2df(obj.filt)
+obj.df[1:5,1:5]
+obj.df <- t(obj.df)
+obj.df[1:5,1:5]
+obj.df <- obj.df[2:nrow(obj.df),] # remove pop row
+obj.df[1:5,1:5]
+dim(obj.df)
+str(obj.df)
+
+obj.df <- as.data.frame(obj.df)
+dim(obj.df)
+#str(obj.df)
+obj.df[1:5,1:5] # See top left of file
+obj.df[(dim(obj.df)[1]-5):dim(obj.df)[1], (dim(obj.df)[2]-5):dim(obj.df)[2]] # See bottom right of file
+
+# Add collector col
+obj.df$marker.per.missing <- NA
+
+for(i in 1:(nrow(obj.df))){
+  
+  # Per marker                      sum all NAs for the marker, divide by total number markers (#TODO: Confirm or find better method)
+  obj.df$marker.per.missing[i] <- ( sum(is.na(obj.df[i,])) / (ncol(obj.df)) )
+  
+}
+
+head(obj.df$marker.per.missing)
+table(is.na(obj.df[2,]))
+
+# Plot
+pdf(file = "03_results/geno_rate_by_marker.pdf", width = 5, height = 4)
+plot(1- obj.df$marker.per.missing, xlab = "Marker index", ylab = "Genotyping rate", las = 1)
+abline(h = 0.5
+       #, col = "grey60"
+       , lty = 3, )
+dev.off()
+
+# What is the average missing data per marker? 
+summary(obj.df$marker.per.missing)
+
+# Rename back to obj
+obj <- obj.filt
+
+
+##### 03.3 Drop monomorphic loci #####
+drop_loci(drop_monomorphic = TRUE)
+obj <- obj_filt
+
+
+##### 03.4 Post-QC data filter #####
+obj
+
+## View the ind or loc names
+inds <- indNames(obj)
+loci <- locNames(obj)
+
+# Save out which individuals have passed the filters
+write.table(x = inds, file = "03_results/retained_individuals.txt", sep = "\t", quote = F
+            , row.names = F, col.names = F
+)
+
+write.table(x = loci, file = "03_results/retained_loci.txt", sep = "\t", quote = F
+            , row.names = F, col.names = F
+)
+
+
+##### 03.5 per marker stats and filters #####
+## Per locus statistics
+per_locus_stats(data = obj)
+head(per_loc_stats.df)
+
+pdf(file = "per_locus_Hobs.pdf", width = 6, height = 5) 
+plot(x = per_loc_stats.df$Hobs
+     , xlab = "Marker (index)"
+     , ylab = "Observed Heterozygosity (Hobs)"
+     , las = 1
+)
+
+abline(h = 0.5, lty = 3)
+dev.off()
+
+## Remove Hobs > 0.5 markers 
+# Which markers are greater than 0.5 heterozygosity?
+hobs.outliers <- per_loc_stats.df[per_loc_stats.df$Hobs > 0.5, "mname"]
+keep <- setdiff(x = locNames(obj), y = hobs.outliers)
+# Drop Hobs > 0.5 loci from genind
+obj <- obj[, loc=keep]
+obj
+
+## Hardy-Weinberg
+# hwe_eval(data = obj, alpha = 0.01)
+# writes out as HWE_result_alpha_0.01.txt
+
+
+##### 03.5 Post-all filters #####
+characterize_genepop(df = obj, N = 30)
+
+# Save out colours to be used downstream
+colours
+colnames(x = colours) <- c("collection", "colour")
+write.csv(x = colours, file = "00_archive/formatted_cols.csv", quote = F, row.names = F)
+
+
+#### 04. Analysis ####
+## Multivariate
+# PCA from genind
+pca_from_genind(data = obj, PCs_ret = 4, colour_file = "00_archive/formatted_cols.csv")
+
+# DAPC from genind
+dapc_from_genind(data = obj, plot_allele_loadings = TRUE, colour_file = "00_archive/formatted_cols.csv")
+
+## Dendrogram
+#make_tree(bootstrap = TRUE, boot_obj = obj, nboots = 10000, dist_metric = "edwards.dist", separated = FALSE)
+# not working, use alternate method
+
+## Genetic differentiation
+calculate_FST(format = "genind", dat = obj, separated = FALSE, bootstrap = TRUE)
+
+## Private alleles
+regional_obj <- obj
+
+# Combine related pops to query private alleles at regional level
+unique(pop(regional_obj))
+pop(regional_obj) <- gsub(pattern = "VIU_offspring|VIU_parent", replacement = "VIU", x = pop(regional_obj)) # combine VIU
+pop(regional_obj) <- gsub(pattern = "PEN|FRA|JPN", replacement = "JPN", x = pop(regional_obj))              # combine JPN lineage
+unique(pop(regional_obj))
+
+pa <- private_alleles(gid = regional_obj)
+write.csv(x = pa, file = "03_results/private_alleles.csv", quote = F)
+
+
+####### Convert genepop to Rubias format #####
+# Need to create a stock code file, in the form of
+# in the tab-delim format of: 
+#collection	repunit
+#12Mile_Creek	GoA
+
+stock_code.df <- as.data.frame(unique(pop(obj)))
+colnames(stock_code.df) <- "collection"
+stock_code.df$repunit <- stock_code.df$collection
+stock_code.df
+write_delim(x = stock_code.df, file = "00_archive/stock_code.txt", delim = "\t", col_names = T)
+micro_stock_code.FN <- "00_archive/stock_code.txt"
+# this is for annotate_rubias(), for an unknown reason it requires the name micro_stock_code.FN
+
+## Convert genepop to rubias
+obj # the current analysis object
+
+## If running manually, here are the arguments needed
+#sample_type <- "reference"
+#data <- obj
+
+genepop_to_rubias_SNP(data = obj, sample_type = "reference", custom_format = TRUE, micro_stock_code.FN = micro_stock_code.FN)
+
+# Using this output, move to "01_scripts/ckmr_from_rubias.R"
+
+## Simulations
+# full_sim(rubias_base.FN = "03_results/rubias_output_SNP.txt", num_sim_indiv = 200, sim_reps = 100)
+
+## Inbreeding
+# # Estimating inbreeding (from adegenet tutorial)
+# obj_PEN <- seppop(x = obj)$PEN
+# obj_VIU_parent <- seppop(x = obj)$VIU_parent
+# obj_VIU_offspring <- seppop(x = obj)$VIU_offspring
+# obj_DPB <- seppop(x = obj)$DPB
+# 
+# # compute the mean inbreeding for each individual and plot
+# #temp <- inbreeding(x = obj_PEN, N = 100)
+# #temp <- inbreeding(x = obj_VIU_parent, N = 100)
+# #temp <- inbreeding(x = obj_VIU_offspring, N = 100)
+# temp <- inbreeding(x = obj_DPB, N = 100)
+# 
+# class(temp)
+# head(names(temp))
+# temp[[1]] # temp is a list of values sampled from the likelihood distribution of each individual; means values are obtained for all indiv using sapply
+# Fbar <- sapply(temp, mean)
+# hist(Fbar, col = "firebrick", main = "Average inbreeding in Pendrell")
+# hist(Fbar, col = "firebrick", main = "Average inbreeding in VIU parents")
+# hist(Fbar, col = "firebrick", main = "Average inbreeding in VIU offspring")
+# hist(Fbar, col = "firebrick", main = "Average inbreeding in DPB")
+
+
+## Per sample heterozygosity
+
+# The following would need extensive coding to make happen
+#rubias_to_vcf() # write out, then use instructions here to get per individual heterozygosity in vcftools
+# https://github.com/bensutherland/ms_oyster_popgen/blob/master/01_scripts/heterozygosity.sh
+# per population heterozygosity
+
+
+# related would be good to run after here
+
