@@ -3,7 +3,7 @@
 # Initialized 2022-12-05
 # Requires running "ms_scallop_popgen/01_scripts/pyes_popgen_analysis.R" first
 
-# Source simple_pop_stats and choose Yesso scallop
+# Prior to running the following, source simple_pop_stats and choose Yesso scallop
 
 #### 01. Load Data ####
 load(file = "02_input_data/yesso_scallop_genind_2022-12-05.RData") # loaded from prerequisite script above
@@ -13,7 +13,6 @@ obj <- my.data.gid
 obj
 
 #### 02. Prepare Data ####
-
 unique(pop(obj))
 
 characterize_genepop(obj)
@@ -46,6 +45,8 @@ percent_missing_by_ind(df = obj)
 head(missing_data.df)
 
 missing_data.df$pop <- rep(x = NA, times = nrow(missing_data.df))
+
+# Provide population based on the individual name
 missing_data.df$pop[grep(pattern = "BC", x = missing_data.df$ind)] <- "BC"
 missing_data.df$pop[grep(pattern = "JPN", x = missing_data.df$ind)] <- "JPN"
 missing_data.df$pop[grep(pattern = "VIU", x = missing_data.df$ind)] <- "VIU"
@@ -53,7 +54,7 @@ table(missing_data.df$pop)
 
 head(missing_data.df)
 
-# Combine colours to dataframe for plotting, don't sort
+# Combine colours to dataframe for plotting, don't sort, as it is still in the same order as the obj
 colours
 plot_cols.df <- merge(x = missing_data.df, y = colours, by.x = "pop", by.y = "pops_in_genepop", all.x = T
                       , sort = F
@@ -61,7 +62,7 @@ plot_cols.df <- merge(x = missing_data.df, y = colours, by.x = "pop", by.y = "po
 
 # Plot missing data by individual
 pdf(file = "03_results/geno_rate_by_ind.pdf", width = 8, height = 5)
-plot(1 - plot_cols.df$ind.per.missing, ylab = "Genotyping percentage"
+plot(1 - plot_cols.df$ind.per.missing, ylab = "Genotyping rate (%)"
      , col = plot_cols.df$my.cols
      , las = 1
      , xlab = "Individual"
@@ -82,14 +83,10 @@ write_delim(x = missing_data.df, file = "03_results/geno_rate_by_ind.txt"
             , delim = "\t")
 
 
-# Temporary fix
-obj.df <- missing_data.df
-head(obj.df)
-
 ## Filter individuals
-# Keep inds with 70% genotyping rate (% missing < 0.3)
-keep <- obj.df[obj.df$ind.per.missing < 0.3, "ind"]
-
+# Identify which samples to retain based on genotyping rate
+#  to keep inds with 70% genotyping rate (% missing < 0.3)
+keep <- missing_data.df[missing_data.df$ind.per.missing < 0.3, "ind"]
 length(keep)
 nInd(obj)
 
@@ -99,56 +96,61 @@ table(pop(obj.filt))
 
 
 ##### 03.2 Loci - missing data #####
-# Filter loci based on missing data
-obj.df <- genind2df(obj.filt)
-obj.df[1:5,1:5]
-obj.df <- t(obj.df)
-obj.df[1:5,1:5]
-obj.df <- obj.df[2:nrow(obj.df),] # remove pop row
-obj.df[1:5,1:5]
-dim(obj.df)
-str(obj.df)
 
-obj.df <- as.data.frame(obj.df)
-dim(obj.df)
-#str(obj.df)
-obj.df[1:5,1:5] # See top left of file
-obj.df[(dim(obj.df)[1]-5):dim(obj.df)[1], (dim(obj.df)[2]-5):dim(obj.df)[2]] # See bottom right of file
+# Note: the following has been commented out because it is not required, loci were filtered by the populations module for
+#   missing data and monomorphism
 
-# Add collector col
-obj.df$marker.per.missing <- NA
-
-for(i in 1:(nrow(obj.df))){
-  
-  # Per marker                      sum all NAs for the marker, divide by total number markers (#TODO: Confirm or find better method)
-  obj.df$marker.per.missing[i] <- ( sum(is.na(obj.df[i,])) / (ncol(obj.df)) )
-  
-}
-
-head(obj.df$marker.per.missing)
-table(is.na(obj.df[2,]))
-
-# Plot
-pdf(file = "03_results/geno_rate_by_marker.pdf", width = 5, height = 4)
-plot(1- obj.df$marker.per.missing, xlab = "Marker index", ylab = "Genotyping rate", las = 1)
-abline(h = 0.5
-       #, col = "grey60"
-       , lty = 3, )
-dev.off()
-
-# What is the average missing data per marker? 
-summary(obj.df$marker.per.missing)
-
-# Rename back to obj
-obj <- obj.filt
-
-
-##### 03.3 Drop monomorphic loci #####
-drop_loci(drop_monomorphic = TRUE)
-obj <- obj_filt
+# # Filter loci based on missing data
+# obj.df <- genind2df(obj.filt)
+# obj.df[1:5,1:5]
+# obj.df <- t(obj.df)
+# obj.df[1:5,1:5]
+# obj.df <- obj.df[2:nrow(obj.df),] # remove pop row
+# obj.df[1:5,1:5]
+# dim(obj.df)
+# str(obj.df)
+# 
+# obj.df <- as.data.frame(obj.df)
+# dim(obj.df)
+# #str(obj.df)
+# obj.df[1:5,1:5] # See top left of file
+# obj.df[(dim(obj.df)[1]-5):dim(obj.df)[1], (dim(obj.df)[2]-5):dim(obj.df)[2]] # See bottom right of file
+# 
+# # Add collector col
+# obj.df$marker.per.missing <- NA
+# 
+# for(i in 1:(nrow(obj.df))){
+#   
+#   # Per marker                      sum all NAs for the marker, divide by total number markers (#TODO: Confirm or find better method)
+#   obj.df$marker.per.missing[i] <- ( sum(is.na(obj.df[i,])) / (ncol(obj.df)) )
+#   
+# }
+# 
+# head(obj.df$marker.per.missing)
+# table(is.na(obj.df[2,]))
+# 
+# # Plot
+# pdf(file = "03_results/geno_rate_by_marker.pdf", width = 5, height = 4)
+# plot(1- obj.df$marker.per.missing, xlab = "Marker index", ylab = "Genotyping rate", las = 1)
+# abline(h = 0.5
+#        #, col = "grey60"
+#        , lty = 3, )
+# dev.off()
+# 
+# # What is the average missing data per marker? 
+# summary(obj.df$marker.per.missing)
+# 
+# # Rename back to obj
+# obj <- obj.filt
+# 
+# 
+# ##### 03.3 Drop monomorphic loci #####
+# drop_loci(drop_monomorphic = TRUE)
+# obj <- obj_filt
 
 
 ##### 03.4 Post-QC data filter #####
+obj <- obj.filt
 obj
 
 ## View the ind or loc names
@@ -170,7 +172,7 @@ write.table(x = loci, file = "03_results/retained_loci.txt", sep = "\t", quote =
 per_locus_stats(data = obj)
 head(per_loc_stats.df)
 
-pdf(file = "per_locus_Hobs.pdf", width = 6, height = 5) 
+pdf(file = "03_results/per_locus_Hobs.pdf", width = 6, height = 5) 
 plot(x = per_loc_stats.df$Hobs
      , xlab = "Marker (index)"
      , ylab = "Observed Heterozygosity (Hobs)"
@@ -180,22 +182,51 @@ plot(x = per_loc_stats.df$Hobs
 abline(h = 0.5, lty = 3)
 dev.off()
 
-## Remove Hobs > 0.5 markers 
-# Which markers are greater than 0.5 heterozygosity?
-hobs.outliers <- per_loc_stats.df[per_loc_stats.df$Hobs > 0.5, "mname"]
-keep <- setdiff(x = locNames(obj), y = hobs.outliers)
-# Drop Hobs > 0.5 loci from genind
-obj <- obj[, loc=keep]
+
+## Per locus, per population Hardy-Weinberg proportion statistics
+hwe_eval(data = obj, alpha = 0.01)
+
+hwe_outlier_mname_BC.vec    <- per_locus_hwe_BC.df[per_locus_hwe_BC.df$`Pr(chi^2 >)` < 0.01, "mname"]
+hwe_outlier_mname_JPN.vec    <- per_locus_hwe_JPN.df[per_locus_hwe_JPN.df$`Pr(chi^2 >)` < 0.01, "mname"]
+hwe_outlier_mname_VIU.vec    <- per_locus_hwe_VIU.df[per_locus_hwe_VIU.df$`Pr(chi^2 >)` < 0.01, "mname"]
+
+# How many outliers (p < 0.01) per population
+length(hwe_outlier_mname_BC.vec)    #  705 markers out of HWE
+length(hwe_outlier_mname_JPN.vec)   # 1780 markers out of HWE
+length(hwe_outlier_mname_VIU.vec)   # 1028 markers out of HWE
+
+# How many unique HWE deviating markers?  
+markers_to_drop <- unique(c(hwe_outlier_mname_BC.vec, hwe_outlier_mname_JPN.vec, hwe_outlier_mname_VIU.vec))
+length(markers_to_drop) # 2595 ( the sum total of each is 3513, so there are ~1000 markers that are seen twice)
+
+markers_to_keep <- setdiff(x = locNames(obj), y = markers_to_drop)
+length(markers_to_keep) # 6,804 markers to keep
+
+obj <- obj[, loc=markers_to_keep]
 obj
 
-## Hardy-Weinberg
-# hwe_eval(data = obj, alpha = 0.01)
-# writes out as HWE_result_alpha_0.01.txt
+## Remove Hobs > 0.5 markers 
+# Which markers are greater than 0.5 heterozygosity?
+hobs.outliers <- per_loc_stats.df[per_loc_stats.df$Hobs > 0.5, "mname"] # 210 markers
+
+# How many hobs outliers remain after samples were dropped for HWE deviation?
+hobs.outliers.remaining <- intersect(hobs.outliers, locNames(obj))
+length(hobs.outliers.remaining) # 73 remain, should drop these too
+
+keep <- setdiff(x = locNames(obj), y = hobs.outliers)
+length(keep) # 6,731 remain
+
+# Drop Hobs > 0.5 loci from genind
+obj <- obj[, loc=keep] # 
+obj
+
+
+# Post hwe filter, could sep pop, calc per_locus_stats per pop, then correlate Hobs
+sep.obj <- seppop(x = obj)
+
 
 
 ##### 03.5 Post-all filters #####
-characterize_genepop(df = obj, N = 30)
-
 # Save out colours to be used downstream
 colours
 colnames(x = colours) <- c("collection", "colour")
@@ -208,11 +239,7 @@ write.csv(x = colours, file = "00_archive/formatted_cols.csv", quote = F, row.na
 pca_from_genind(data = obj, PCs_ret = 4, colour_file = "00_archive/formatted_cols.csv")
 
 # DAPC from genind
-dapc_from_genind(data = obj, plot_allele_loadings = TRUE, colour_file = "00_archive/formatted_cols.csv")
-
-## Dendrogram
-#make_tree(bootstrap = TRUE, boot_obj = obj, nboots = 10000, dist_metric = "edwards.dist", separated = FALSE)
-# not working, use alternate method
+dapc_from_genind(data = obj, plot_allele_loadings = TRUE, colour_file = "00_archive/formatted_cols.csv", n.pca = 10, n.da = 2)
 
 ## Genetic differentiation
 calculate_FST(format = "genind", dat = obj, separated = FALSE, bootstrap = TRUE)
