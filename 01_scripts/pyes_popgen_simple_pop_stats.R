@@ -17,7 +17,7 @@ unique(pop(obj))
 
 characterize_genepop(obj)
 
-## Population colours
+## Define population colours
 pops_in_genepop <- unique(pop(obj))
 pops_in_genepop.df <- as.data.frame(pops_in_genepop)
 
@@ -27,7 +27,7 @@ pops_in_genepop.df <- as.data.frame(pops_in_genepop)
 # download.file(url, destfile)   # only need to run once
 #my_colours <- read.csv(destfile)
 
-# Manually write
+# Manually write, based on the above where possible
 pop_colours <- matrix(c("BC", "JPN", "VIU", "purple1", "turquoise4", "red"), nrow = 3, ncol = 2)
 colnames(pop_colours) <- c("my.pops", "my.cols")
 
@@ -39,10 +39,28 @@ colours <- merge(x = pops_in_genepop.df, y =  pop_colours, by.x = "pops_in_genep
 colours
 
 
-#### 03. Characterize missing data (indiv and loci) and filter ####
+#### 03. Characterize missing data (indiv) and filter ####
 ##### 03.1 Individuals - missing data #####
-percent_missing_by_ind(df = obj)
-head(missing_data.df)
+
+# If file already exists, do not re-run percent_missing_data
+if(file.exists("03_results/missing_data_per_indiv.csv")){
+  
+  print("missing data information available")
+  
+  missing_data.df <- read.csv(file = "03_results/missing_data_per_indiv.csv")
+  
+}else{
+  
+  print("missing data information is not available, generating")
+  
+  percent_missing_by_ind(df = obj)
+  
+  write.csv(x = missing_data.df, file = "03_results/missing_data_per_indiv.csv", row.names = F)
+  
+}
+
+
+
 
 missing_data.df$pop <- rep(x = NA, times = nrow(missing_data.df))
 
