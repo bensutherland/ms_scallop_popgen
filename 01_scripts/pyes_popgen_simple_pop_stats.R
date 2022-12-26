@@ -45,13 +45,13 @@ colours
 # If file already exists, do not re-run percent_missing_data
 if(file.exists("03_results/missing_data_per_indiv.csv")){
   
-  print("missing data information available")
+  print("Missing data information available, loading")
   
   missing_data.df <- read.csv(file = "03_results/missing_data_per_indiv.csv")
   
 }else{
   
-  print("missing data information is not available, generating")
+  print("Missing data information is not available, generating")
   
   percent_missing_by_ind(df = obj)
   
@@ -60,8 +60,7 @@ if(file.exists("03_results/missing_data_per_indiv.csv")){
 }
 
 
-
-
+# Provide population IDs to missing data, based on names
 missing_data.df$pop <- rep(x = NA, times = nrow(missing_data.df))
 
 # Provide population based on the individual name
@@ -87,7 +86,7 @@ plot(1 - plot_cols.df$ind.per.missing, ylab = "Genotyping rate (%)"
      , ylim = c(0,1)
 )
 
-abline(h = 0.5, lty = 3)
+abline(h = 0.7, lty = 3)
 
 legend("bottomright", legend = unique(plot_cols.df$pop)
        , fill = unique(plot_cols.df$my.cols)
@@ -96,75 +95,20 @@ legend("bottomright", legend = unique(plot_cols.df$pop)
 )
 dev.off()
 
-# Save the percent missing by individual
-write_delim(x = missing_data.df, file = "03_results/geno_rate_by_ind.txt"
-            , delim = "\t")
-
 
 ## Filter individuals
 # Identify which samples to retain based on genotyping rate
 #  to keep inds with 70% genotyping rate (% missing < 0.3)
 keep <- missing_data.df[missing_data.df$ind.per.missing < 0.3, "ind"]
-length(keep)
-nInd(obj)
+print(paste0("Retaining ", length(keep), " of the total ", nInd(obj), " individuals"))
 
+# Retain only the keep indiv
 obj.filt <- obj[(keep)]
 obj.filt
 table(pop(obj.filt))
 
 
-##### 03.2 Loci - missing data #####
 
-# Note: the following has been commented out because it is not required, loci were filtered by the populations module for
-#   missing data and monomorphism
-
-# # Filter loci based on missing data
-# obj.df <- genind2df(obj.filt)
-# obj.df[1:5,1:5]
-# obj.df <- t(obj.df)
-# obj.df[1:5,1:5]
-# obj.df <- obj.df[2:nrow(obj.df),] # remove pop row
-# obj.df[1:5,1:5]
-# dim(obj.df)
-# str(obj.df)
-# 
-# obj.df <- as.data.frame(obj.df)
-# dim(obj.df)
-# #str(obj.df)
-# obj.df[1:5,1:5] # See top left of file
-# obj.df[(dim(obj.df)[1]-5):dim(obj.df)[1], (dim(obj.df)[2]-5):dim(obj.df)[2]] # See bottom right of file
-# 
-# # Add collector col
-# obj.df$marker.per.missing <- NA
-# 
-# for(i in 1:(nrow(obj.df))){
-#   
-#   # Per marker                      sum all NAs for the marker, divide by total number markers (#TODO: Confirm or find better method)
-#   obj.df$marker.per.missing[i] <- ( sum(is.na(obj.df[i,])) / (ncol(obj.df)) )
-#   
-# }
-# 
-# head(obj.df$marker.per.missing)
-# table(is.na(obj.df[2,]))
-# 
-# # Plot
-# pdf(file = "03_results/geno_rate_by_marker.pdf", width = 5, height = 4)
-# plot(1- obj.df$marker.per.missing, xlab = "Marker index", ylab = "Genotyping rate", las = 1)
-# abline(h = 0.5
-#        #, col = "grey60"
-#        , lty = 3, )
-# dev.off()
-# 
-# # What is the average missing data per marker? 
-# summary(obj.df$marker.per.missing)
-# 
-# # Rename back to obj
-# obj <- obj.filt
-# 
-# 
-# ##### 03.3 Drop monomorphic loci #####
-# drop_loci(drop_monomorphic = TRUE)
-# obj <- obj_filt
 
 
 ##### 03.4 Post-QC data filter #####
