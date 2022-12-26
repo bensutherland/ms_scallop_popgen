@@ -107,19 +107,13 @@ obj.filt <- obj[(keep)]
 obj.filt
 table(pop(obj.filt))
 
-
-
-
-
-##### 03.4 Post-QC data filter #####
+# Rename
 obj <- obj.filt
-obj
 
-## View the ind or loc names
+## Retain names of retained indiv and loci
 inds <- indNames(obj)
 loci <- locNames(obj)
 
-# Save out which individuals have passed the filters
 write.table(x = inds, file = "03_results/retained_individuals.txt", sep = "\t", quote = F
             , row.names = F, col.names = F
 )
@@ -129,11 +123,27 @@ write.table(x = loci, file = "03_results/retained_loci.txt", sep = "\t", quote =
 )
 
 
-##### 03.5 per marker stats and filters #####
+##### 03.2 Loci by HWE and excess Hobs #####
 ## Per locus statistics
-per_locus_stats(data = obj)
-head(per_loc_stats.df)
 
+# If file already exists, do not re-run per_locus_stats
+if(file.exists(Sys.glob(paths = "03_results/per_locus_stats_*.txt"))){
+  
+  print(paste0("Per locus data information available, loading ", Sys.glob("03_results/per_locus_stats_*.txt")))
+  
+  per_loc_stats.df <- read.delim(file = Sys.glob("03_results/per_locus_stats_*.txt"), header = TRUE)
+  
+}else{
+  
+  print("Per locus data information is not available, generating")
+  
+  per_locus_stats(data = obj)
+  
+  # The function will write out already to file, as per_locus_stats_<date>.txt
+  
+}
+
+# Plot
 pdf(file = "03_results/per_locus_Hobs.pdf", width = 6, height = 5) 
 plot(x = per_loc_stats.df$Hobs
      , xlab = "Marker (index)"
@@ -146,45 +156,77 @@ dev.off()
 
 
 ## Per locus, per population Hardy-Weinberg proportion statistics
-hwe_eval(data = obj, alpha = 0.01)
+# If file already exists, do not re-run
+files_to_read <- NULL; hwe.list <- list()
+if(file.exists("03_results/HWE_result_alpha_0.01.txt")){
+  
+  print("Missing data information available, loading")
+  
+  files_to_read <- list.files(path = "03_results/", pattern = "per_locus_hwe")
+  shortname <- gsub(pattern = "per_locus_hwe_|\\.txt", replacement = "", x = files_to_read)
+  
+  # Read them all in
+  for(i in 1:length(shortname)){
+    
+  hwe.list[[shortname[i]]]  <-  read.delim(file = paste0("03_results/per_locus_hwe_", shortname[i], ".txt" ))
+    
+  }
+  
+  per_locus_hwe_BC.df <- hwe.list[["BC"]]
+  per_locus_hwe_JPN.df <- hwe.list[["JPN"]]
+  per_locus_hwe_VIU.df <- hwe.list[["VIU"]]
+  
+  
+}else{
+  
+  print("Information is not available, generating")
+  
+  hwe_eval(data = obj, alpha = 0.01)
+  
+}
 
-hwe_outlier_mname_BC.vec    <- per_locus_hwe_BC.df[per_locus_hwe_BC.df$`Pr(chi^2 >)` < 0.01, "mname"]
-hwe_outlier_mname_JPN.vec    <- per_locus_hwe_JPN.df[per_locus_hwe_JPN.df$`Pr(chi^2 >)` < 0.01, "mname"]
-hwe_outlier_mname_VIU.vec    <- per_locus_hwe_VIU.df[per_locus_hwe_VIU.df$`Pr(chi^2 >)` < 0.01, "mname"]
+# Identify column with the p-val
+col.oi <- grep(pattern = "Pr", x = colnames(per_locus_hwe_BC.df))
+
+# Identify mnames of outliers
+hwe_outlier_mname_BC.vec     <-  per_locus_hwe_BC.df[per_locus_hwe_BC.df[, col.oi] < 0.01, "mname"]
+hwe_outlier_mname_JPN.vec    <- per_locus_hwe_JPN.df[per_locus_hwe_JPN.df[, col.oi] < 0.01, "mname"]
+hwe_outlier_mname_VIU.vec    <- per_locus_hwe_VIU.df[per_locus_hwe_VIU.df[, col.oi] < 0.01, "mname"]
 
 # How many outliers (p < 0.01) per population
 length(hwe_outlier_mname_BC.vec)    #  705 markers out of HWE
-length(hwe_outlier_mname_JPN.vec)   # 1780 markers out of HWE
+length(hwe_outlier_mname_JPN.vec)   # 1986 markers out of HWE
+### TODO: calculate raw again, as number above changed slightly - rounding issue when writing to file? 
 length(hwe_outlier_mname_VIU.vec)   # 1028 markers out of HWE
 
 # How many unique HWE deviating markers?  
 markers_to_drop <- unique(c(hwe_outlier_mname_BC.vec, hwe_outlier_mname_JPN.vec, hwe_outlier_mname_VIU.vec))
-length(markers_to_drop) # 2595 ( the sum total of each is 3513, so there are ~1000 markers that are seen twice)
+length(markers_to_drop) # 2747 ( the sum total of each is 3719, so there are ~1000 markers that are seen twice)
 
 markers_to_keep <- setdiff(x = locNames(obj), y = markers_to_drop)
-length(markers_to_keep) # 6,804 markers to keep
+length(markers_to_keep) # 6652 markers to keep
 
 obj <- obj[, loc=markers_to_keep]
 obj
 
 ## Remove Hobs > 0.5 markers 
 # Which markers are greater than 0.5 heterozygosity?
-hobs.outliers <- per_loc_stats.df[per_loc_stats.df$Hobs > 0.5, "mname"] # 210 markers
+hobs.outliers <- per_loc_stats.df[per_loc_stats.df$Hobs > 0.5, "mname"] 
+length(hobs.outliers) # 202 markers
 
 # How many hobs outliers remain after samples were dropped for HWE deviation?
 hobs.outliers.remaining <- intersect(hobs.outliers, locNames(obj))
-length(hobs.outliers.remaining) # 73 remain, should drop these too
+length(hobs.outliers.remaining) # 68 remain, should drop these too
 
 keep <- setdiff(x = locNames(obj), y = hobs.outliers)
-length(keep) # 6,731 remain
+length(keep) # 6584 remain
 
 # Drop Hobs > 0.5 loci from genind
 obj <- obj[, loc=keep] # 
 obj
 
-
-# Post hwe filter, could sep pop, calc per_locus_stats per pop, then correlate Hobs
-sep.obj <- seppop(x = obj)
+# Write out object
+save.image(file = "03_results/post_all_filters.RData")
 
 
 
