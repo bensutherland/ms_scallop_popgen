@@ -143,7 +143,7 @@ if(file.exists(Sys.glob(paths = "03_results/per_locus_stats_*.txt"))){
   
 }
 
-# Plot
+# Plot (still contains HOBS outliers... # TODO is it intentional? otherwise use %in% 'loci')
 pdf(file = "03_results/per_locus_Hobs.pdf", width = 6, height = 5) 
 plot(x = per_loc_stats.df$Hobs
      , xlab = "Marker (index)"
@@ -248,6 +248,20 @@ dapc_from_genind(data = obj, plot_allele_loadings = TRUE, colour_file = "00_arch
 ## Genetic differentiation
 calculate_FST(format = "genind", dat = obj, separated = FALSE, bootstrap = TRUE)
 
+
+
+
+
+
+
+#### HERE TODAY ####
+
+
+
+
+
+
+
 ## Private alleles
 regional_obj <- obj
 
@@ -261,33 +275,6 @@ pa <- private_alleles(gid = regional_obj)
 write.csv(x = pa, file = "03_results/private_alleles.csv", quote = F)
 
 
-####### Convert genepop to Rubias format #####
-# Need to create a stock code file, in the form of
-# in the tab-delim format of: 
-#collection	repunit
-#12Mile_Creek	GoA
-
-stock_code.df <- as.data.frame(unique(pop(obj)))
-colnames(stock_code.df) <- "collection"
-stock_code.df$repunit <- stock_code.df$collection
-stock_code.df
-write_delim(x = stock_code.df, file = "00_archive/stock_code.txt", delim = "\t", col_names = T)
-micro_stock_code.FN <- "00_archive/stock_code.txt"
-# this is for annotate_rubias(), for an unknown reason it requires the name micro_stock_code.FN
-
-## Convert genepop to rubias
-obj # the current analysis object
-
-## If running manually, here are the arguments needed
-#sample_type <- "reference"
-#data <- obj
-
-genepop_to_rubias_SNP(data = obj, sample_type = "reference", custom_format = TRUE, micro_stock_code.FN = micro_stock_code.FN)
-
-# Using this output, move to "01_scripts/ckmr_from_rubias.R"
-
-## Simulations
-# full_sim(rubias_base.FN = "03_results/rubias_output_SNP.txt", num_sim_indiv = 200, sim_reps = 100)
 
 ## Inbreeding
 # # Estimating inbreeding (from adegenet tutorial)
