@@ -248,32 +248,39 @@ dapc_from_genind(data = obj, plot_allele_loadings = TRUE, colour_file = "00_arch
 ## Genetic differentiation
 calculate_FST(format = "genind", dat = obj, separated = FALSE, bootstrap = TRUE)
 
-
-
-
-
-
-
-#### HERE TODAY ####
-
-
-
-
-
-
-
-## Private alleles
+## Private alleles (but recall that pa's were also evaluated by Stacks populations module)
 regional_obj <- obj
 
 # Combine related pops to query private alleles at regional level
 unique(pop(regional_obj))
-pop(regional_obj) <- gsub(pattern = "VIU_offspring|VIU_parent", replacement = "VIU", x = pop(regional_obj)) # combine VIU
-pop(regional_obj) <- gsub(pattern = "PEN|FRA|JPN", replacement = "JPN", x = pop(regional_obj))              # combine JPN lineage
-unique(pop(regional_obj))
+# pop(regional_obj) <- gsub(pattern = "VIU_offspring|VIU_parent", replacement = "VIU", x = pop(regional_obj)) # combine VIU
+# pop(regional_obj) <- gsub(pattern = "PEN|FRA|JPN", replacement = "JPN", x = pop(regional_obj))              # combine JPN lineage
+# unique(pop(regional_obj))
 
 pa <- private_alleles(gid = regional_obj)
+str(pa)
+pa.t <- t(pa)
+head(pa.t)
+table(pa.t[,"BC"] > 0)
+table(pa.t[,"JPN"] > 0)
+table(pa.t[,"VIU"] > 0)
+
+table(pop(regional_obj))
+
 write.csv(x = pa, file = "03_results/private_alleles.csv", quote = F)
 
+# Downsample and reassess
+regional_obj_downsampled <- downsample_pops(data = regional_obj, subset_method = "min")
+pa_downsampled <- private_alleles(gid = obj_subset)
+pa_downsampled_t <- t(pa_downsampled)
+head(pa_downsampled_t)
+table(pa_downsampled_t[,"BC"] > 0)
+table(pa_downsampled_t[,"JPN"] > 0)
+table(pa_downsampled_t[,"VIU"] > 0)
+
+table(pop(obj_subset))
+
+write.csv(x = pa_downsampled, file = "03_results/private_alleles_downsampled.csv", quote = F)
 
 
 ## Inbreeding
