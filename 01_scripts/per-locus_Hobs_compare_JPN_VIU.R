@@ -31,6 +31,8 @@ file.copy(from = paste0("03_results/", filename) , to = "03_results/popn_sp_hobs
 # Restore the original
 filename <- basename(Sys.glob("03_results/all_popn_hobs_calc/per_locus_stats_*"))
 file.copy(from = paste0("03_results/all_popn_hobs_calc/", filename) , to = paste0("03_results/", filename), overwrite = TRUE)
+per_loc_stats.df <- read.delim(file = Sys.glob("03_results/all_popn_hobs_calc/per_locus_stats_*"))
+head(per_loc_stats.df)
 
 # Compare Hobs
 head(per_loc_stats_JPN.df)
@@ -42,6 +44,12 @@ all_per_loc_data.df <- merge(x = per_loc_stats_JPN.df, y = per_loc_stats_VIU.df,
 head(all_per_loc_data.df)
 
 # Plot
-plot(x = all_per_loc_data.df$Hobs.JPN, y = all_per_loc_data.df$Hobs.VIU)
+pdf(file = "03_results/per_locus_hobs_VIU_vs_JPN.pdf", width = 5, height = 5)
+plot(x = all_per_loc_data.df$Hobs.JPN, y = all_per_loc_data.df$Hobs.VIU
+     , xlab = "per locus HOBS (VIU)"
+     , ylab = "per locus HOBS (JPN"
+     , las = 1
+     )
+dev.off()
 
 # Lots of shared polymorphism to select from for the top markers
