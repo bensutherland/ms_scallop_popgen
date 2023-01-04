@@ -21,4 +21,6 @@
 *.radpainter
 *.xml
 *.out
+FinestructureLibrary.R
+fineRADstructurePlot.R
 

@@ -11,6 +11,8 @@ This repository is in development stage, and comes with no guarantees.
 `multiQC` https://multiqc.info/      
 `stacks_workflow` https://github.com/enormandeau/stacks_workflow    
 `plink` https://zzz.bwh.harvard.edu/plink/plink2.shtml      
+`fineRADstructure` https://www.milan-malinsky.org/fineradstructure        
+
 
 _note: see R scripts for individual package requirements_
 
@@ -105,6 +107,9 @@ Update the number of cores, then run:
 Update to ensure output of plink files, then run:      
 `00-scripts/stacks2_populations_reference.sh`      
 
+Note: for microhaplotype analysis, re-run populations in microhaplotype mode with the following flags:         
+`-p 3 -r 0.7 --min-maf 0.01 --radpainter`          
+
 ### c. Convert output plink files
 Convert output plink files to useable format for adegenet:        
 `plink --ped 05-stacks/populations.plink.ped --map 05-stacks/populations.plink.map --maf 0.01 --recode A --allow-extra-chr --out 05-stacks/populations_single_snp`       
@@ -118,6 +123,35 @@ Open and run interactively:
 note: this will assume you have the `*.raw` file in your folder `05-stacks`, and will output results into `stacks_workflow/12-results`.     
 
 Initial steps will allow you to view the minor allele frequency, and to convert the genlight file into a genind. After the data is in genind format, proceed to `simple_pop_stats`.         
+
+
+## 5. Relatedness
+Use the output radpainter file, with fineRADstructure.      
+If stacks workflow is at same level as current repo:     
+`cp ../stacks_workflow/05-stacks/populations.haps.radpainter ./02_inputs/`            
+note: future version should create its own folder, as output of initial command outputs to input folder too.       
+note: future versions should ensure populations output has RAD loci ordered according to genomic coord
+
+fineRADstructure process:        
+```
+# Infer the co-ancestry matrix from RAD-seq data
+RADpainter paint 02_inputs/populations.haps.radpainter
+
+# Infer recent shared ancestry using haplotype linkage information and coalescence; assign indiv to popn
+finestructure -x 100000 -y 100000 -z 1000 02_inputs/populations.haps_chunks.out 02_inputs/populations.haps_chunks.mcmc.xml
+
+# Build tree
+finestructure -m T -x 10000 02_inputs/populations.haps_chunks.out 02_inputs/populations.haps_chunks.mcmc.xml 02_inputs/populations.haps_chunks.mcmcTree.xml
+
+# Copy R scripts from your programs folder (included with installation of fineRADstructure)
+cp ~/programs/fineRADstructure/fineRADstructurePlot.R ./01_scripts/
+cp ~/programs/fineRADstructure/FinestructureLibrary.R ./01_scripts/
+
+# Edit the required sections of fineRADstructurePlot.R and run interactively
+# The output figures will be in 04_fineRADstructure/ 
+
+```
+
 
 
 
