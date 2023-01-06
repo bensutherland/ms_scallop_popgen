@@ -103,12 +103,53 @@ note: you can now go back and recalculate sample stats if you choose, but save t
 Update the number of cores, then run:      
 `00_scripts/stacks2_gstacks_reference.sh`        
 
-### b. Filter using the populations module      
-Update to ensure output of plink files, then run:      
-`00-scripts/stacks2_populations_reference.sh`      
+### b. Run populations to output VCF to identify outlier het samples
+This step will be used to identify any problematic samples. Use single SNP per locus VCF:            
+```
+# Calculate inbreeding coefficient per sample
+vcftools --het --vcf 05-stacks/populations.snps.vcf --out ./07-filtered_vcfs/samples
 
-Note: for microhaplotype analysis, re-run populations in microhaplotype mode with the following flags:         
-`-p 3 -r 0.7 --min-maf 0.01 --radpainter`          
+# Format data
+awk '{ print $5, $1, $1 }' 07-filtered_vcfs/samples.het | cut -d "_" -f 1,2 > 07-filtered_vcfs/samples.het.data
+
+# Plot
+./00-scripts/utility_scripts/plot_heterozygozity.R 07-filtered_vcfs/samples.het.data
+
+# Observe output and view any problematic individuals
+ 
+```
+
+If you are concerned about any individuals, remove them from the population map, then re-run gstacks. In our case, we will remove individual VIU002, due to a beyond high level of heterozygosity.           
+
+### c. Re-run Stacks v.2.0 genotyper
+`00_scripts/stacks2_gstacks_reference.sh`        
+
+
+### d. Filter using the populations module      
+Update the populations module script `00-scripts/stacks2_populations_reference.sh` as follows, run once for single-snp and once for microhaps:          
+```
+# single SNP per locus
+populations -P "$STACKS_FOLDER" -M "$INFO_FILES_FOLDER"/"$POP_MAP" \
+    -t "$NUM_CPU" -p 3 -r 0.7 \
+    --ordered-export --fasta-loci --vcf \
+    --min-maf 0.01 --hwe --plink --write-single-snp
+
+# Save out all populations files appropriately
+mkdir 05-stacks/popn_out_single_snp
+mv 05-stacks/populations.* 05-stacks/popn_out_single_snp/
+
+# microhaplotypes
+populations -P "$STACKS_FOLDER" -M "$INFO_FILES_FOLDER"/"$POP_MAP" \
+    -t "$NUM_CPU" -p 3 -r 0.7 \
+    --ordered-export --fasta-loci --vcf \
+    --min-maf 0.01 --hwe --plink \
+    --radpainter
+
+# Save out all populations files appropriately
+mkdir 05-stacks/popn_out_microhaps
+mv 05-stacks/populations.* 05-stacks/popn_out_microhaps/
+
+``` 
 
 ### c. Convert output plink files
 Convert output plink files to useable format for adegenet:        
