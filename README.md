@@ -1,7 +1,8 @@
 # Scallop Population Genomics
-This repository is in development stage, and comes with no guarantees. 
+This repository is specifically for analyzing the data to support the following manuscript, and comes with no guarantees of usefulness for other purposes.        
 
 ### Requirements
+Software:     
 `Stacks v2` http://catchenlab.life.illinois.edu/stacks/     
 `cutadapt`  https://cutadapt.readthedocs.io/en/stable/index.html     
 `bwa` http://bio-bwa.sourceforge.net/   
@@ -9,21 +10,24 @@ This repository is in development stage, and comes with no guarantees.
 `R` https://www.r-project.org     
 `FastQC` https://www.bioinformatics.babraham.ac.uk/projects/fastqc/    
 `multiQC` https://multiqc.info/      
-`stacks_workflow` https://github.com/enormandeau/stacks_workflow    
 `plink` https://zzz.bwh.harvard.edu/plink/plink2.shtml      
 `fineRADstructure` https://www.milan-malinsky.org/fineradstructure        
-
-
 _note: see R scripts for individual package requirements_
 
-All commands are executed from `stacks_workflow`. This repo should be cloned in the same parent folder as `stacks_workflow`, as some scripts are used from here.      
+Additional analytic repositories:       
+`stacks_workflow` https://github.com/enormandeau/stacks_workflow    
+`simple_pop_stats` https://github.com/bensutherland/simple_pop_stats      
+
+Clone `ms_scallop_popgen`, `stacks_workflow`, and `simple_pop_stats` in a common folder, with all repos at the same level.       
 
 ## 0. Project planning
 Before starting, plan the appropriate RADseq enzymes for use with the scallop, considering target number of loci and relation to sequencing depth.     
 Use the following script, after updating the locations for the scallop and Pacific oyster genome (as a reference) reference genomes:       
 `01_scripts/scallop_genome_digest.R`       
 
-## 1. Prepare data
+## 1. stacks_workflow - prepare data
+Execute all commands from within the `stacks_workflow` repository.         
+
 ### a. Setup
 1. Copy links to all raw data in `02-raw` (use cp -l)    
 2. Prepare the tab-delimited `sample_information.csv` as explained in `stacks_workflow` (also see template sample_information.csv).     
@@ -61,7 +65,9 @@ Prepare the population map file:
 `./00-scripts/04_prepare_population_map.sh`
 
 
-## 2. Align samples and quality filter on samples
+## 2. stacks_workflow - align samples and quality filter on samples
+Execute all commands from within the `stacks_workflow` repository.      
+
 ### a. Align samples against the reference genome
 Index the reference genome with bwa:    
 `bwa index <ref_genome>`    
@@ -98,7 +104,9 @@ note: you can now go back and recalculate sample stats if you choose, but save t
 
 2. Manually remove these entries from the pop map
 
-## 3. Genotype
+## 3. stacks_workflow - genotype
+Execute all commands from within the `stacks_workflow` repository.         
+
 ### a. Run Stacks v.2.0 genotyper    
 Update the number of cores, then run:      
 `00_scripts/stacks2_gstacks_reference.sh`        
@@ -123,7 +131,6 @@ If you are concerned about any individuals, remove them from the population map,
 
 ### c. Re-run Stacks v.2.0 genotyper
 `00_scripts/stacks2_gstacks_reference.sh`        
-
 
 ### d. Filter using the populations module      
 Update the populations module script `00-scripts/stacks2_populations_reference.sh` as follows, run once for single-snp and once for microhaps:          
