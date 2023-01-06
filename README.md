@@ -169,11 +169,23 @@ Will output `05-stacks/populations_single_snp.raw`, which is the input file in t
 
 
 ## 4. ms_scallop_popgen - genetic data analyses in R
-Open and run interactively:       
+Import the formatted plink data (i.e., `../stacks_workflow/05-stacks/*.raw`) into R and make a genind file:     
 `ms_scallop_popgen/01_scripts/pyes_popgen_analysis.R`        
-note: this will assume you have the `*.raw` file in your folder `05-stacks`, and will output results into `stacks_workflow/12-results`.     
+Output: `./03_results/prepared_genind.RData`, and several plots in `../stacks_workflow/12-results/`.          
 
-Initial steps will allow you to view the minor allele frequency, and to convert the genlight file into a genind. After the data is in genind format, proceed to `simple_pop_stats`.         
+Copy output to simple_pop_stats repo:         
+`cp ./03_results/prepared_genind.RData ../simple_pop_stats_pyes/02_input_data/`      
+
+Source `simple_pop_stats/01_scripts/simple_pop_stats_start.R`, then open and run interactively:      
+`ms_scallop_popgen/01_scripts/pyes_popgen_simple_pop_stats.R`         
+note: output will be in `simple_pop_stats_pyes/03_results`      
+
+This will do the following: 
+- set up colours
+- calculate missing data by individual, plot, and remove excess missing individuals
+- calculate per locus HWE deviation and excess obs. heterozygosity, and filter
+...and will output `03_results/post_all_filters.RData`.        
+
 
 
 ## 5. Relatedness
