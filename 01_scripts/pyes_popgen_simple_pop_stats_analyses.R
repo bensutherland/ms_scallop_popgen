@@ -21,10 +21,24 @@ pca_from_genind(data = obj
                 )
 
 # Determine variance per axis
-
+str(pca.obj) # $eig holds the absolute variance, this can be standardized
+pca.obj$eig[1:10]
+sum(pca.obj$eig)
+(100 * pca.obj$eig / sum(pca.obj$eig))[1:10]
+#16 / 251 * 100 # testing
 
 # DAPC from genind
-dapc_from_genind(data = obj, plot_allele_loadings = TRUE, colour_file = "00_archive/formatted_cols.csv", n.pca = 10, n.da = 2)
+dapc_from_genind(data = obj
+                 , plot_allele_loadings = TRUE
+                 , colour_file = "00_archive/formatted_cols.csv"
+                 , n.pca = 10, n.da = 2
+                 , scree.da = TRUE
+                 , posi.pca = "topright"
+                 , scree.pca = TRUE
+                 , dapc.width = 7
+                 , dapc.height = 5
+                 )
+
 
 ## Genetic differentiation
 calculate_FST(format = "genind", dat = obj, separated = FALSE, bootstrap = TRUE)
@@ -120,3 +134,23 @@ dev.off()
 
 # Could potentially use related would be good to run after here
 # uses function relatedness_calc.r
+
+#### Relatedness ####
+require("dartR")
+require("related")
+# run relatedness_calc.r interactively
+
+
+# then
+require(tidyr)
+
+obj
+
+relatedness_plot(file = "03_results/kinship_analysis_2023-01-05.Rdata", same_pops = TRUE, plot_by = "codes", pdf_width = 7, pdf_height = 5)
+
+#relatedness_plot(file = "03_results/kinship_analysis_<date>.Rdata"
+#, same_pops = TRUE
+#, plot_by = "names")
+#...where you can use either "names" or "codes" if using only same-on-same.
+#...and if you set same_pops to FALSE, you will get all pops pairwise comparisons. (but can't use names)
+file <- "03_results/kinship_analysis_2023-01-05.Rdata"
