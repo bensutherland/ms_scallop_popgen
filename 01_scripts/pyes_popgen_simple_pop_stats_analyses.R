@@ -39,7 +39,6 @@ dapc_from_genind(data = obj
                  , dapc.height = 5
                  )
 
-
 ## Genetic differentiation
 calculate_FST(format = "genind", dat = obj, separated = FALSE, bootstrap = TRUE)
 
@@ -110,7 +109,7 @@ hist(Fmean_BC, col="grey", xlab="mean value of F",
      , las = 1
 )
 
-text(x = 0.8, y = 10, label = paste0("mean = ", round(mean(sapply(F_coeff_BC, mean)), digits = 3)))
+text(x = 0.8, y = 5, label = paste0("mean = ", round(mean(sapply(F_coeff_BC, mean)), digits = 3)))
 
 Fmean_JPN=sapply(F_coeff_JPN, mean)
 hist(Fmean_JPN, col="grey", xlab="mean value of F",
@@ -132,25 +131,17 @@ hist(Fmean_VIU, col="grey", xlab="mean value of F",
 text(x = 0.8, y = 10, label = paste0("mean = ", round(mean(sapply(F_coeff_VIU, mean)), digits = 3)))
 dev.off()
 
-# Could potentially use related would be good to run after here
-# uses function relatedness_calc.r
-
 #### Relatedness ####
 require("dartR")
 require("related")
-# run relatedness_calc.r interactively
-
-
-# then
 require(tidyr)
 
 obj
 
-relatedness_plot(file = "03_results/kinship_analysis_2023-01-05.Rdata", same_pops = TRUE, plot_by = "codes", pdf_width = 7, pdf_height = 5)
+# Calculate inter-individual relatedness
+relatedness_calc(data = obj, datatype = "SNP") # will output as "03_results/kinship_analysis_<date>.Rdata"
 
-#relatedness_plot(file = "03_results/kinship_analysis_<date>.Rdata"
-#, same_pops = TRUE
-#, plot_by = "names")
-#...where you can use either "names" or "codes" if using only same-on-same.
-#...and if you set same_pops to FALSE, you will get all pops pairwise comparisons. (but can't use names)
-file <- "03_results/kinship_analysis_2023-01-05.Rdata"
+# Plot
+relatedness_plot(file = "03_results/kinship_analysis_2023-01-06.Rdata", same_pops = TRUE, plot_by = "codes", pdf_width = 7, pdf_height = 5)
+
+# single SNP per locus analysis is complete
