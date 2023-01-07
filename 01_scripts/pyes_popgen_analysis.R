@@ -90,6 +90,6 @@ pop(my.data.gid) <- pop(my.data)
 unique(pop(my.data.gid))
 
 # Data is now a genind, and therefore can be used with simple_pop_stats
-save(my.data.gid, file="../simple_pop_stats_pyes/02_input_data/yesso_scallop_genind_2022-12-05.RData")
+save(my.data.gid, file="../ms_scallop_popgen/03_results/prepared_genind.RData")
 
 # Next go to "ms_scallop_popgen/01_scripts/pyes_popgen_simple_pop_stats.R"

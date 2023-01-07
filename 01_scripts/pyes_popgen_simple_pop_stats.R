@@ -6,7 +6,7 @@
 # Prior to running the following, source simple_pop_stats and choose Yesso scallop
 
 #### 01. Load Data ####
-load(file = "02_input_data/yesso_scallop_genind_2022-12-05.RData") # loaded from prerequisite script above
+load(file = "02_input_data/prepared_genind.RData") # loaded from prerequisite script above
 datatype <- "SNP" # normally assigned by load_genepop() when input is a genepop
 
 obj <- my.data.gid
@@ -17,6 +17,7 @@ unique(pop(obj))
 
 characterize_genepop(obj)
 
+### Prepare Colours ###
 ## Define population colours
 pops_in_genepop <- unique(pop(obj))
 pops_in_genepop.df <- as.data.frame(pops_in_genepop)
@@ -37,6 +38,11 @@ colours <- merge(x = pops_in_genepop.df, y =  pop_colours, by.x = "pops_in_genep
                  , all.x = T
 )
 colours
+
+# Save out colours (used later)
+colours
+colnames(x = colours) <- c("collection", "colour")
+write.csv(x = colours, file = "00_archive/formatted_cols.csv", quote = F, row.names = F)
 
 
 #### 03. Characterize missing data (indiv) and filter ####
@@ -60,6 +66,7 @@ if(file.exists("03_results/missing_data_per_indiv.csv")){
 }
 
 
+### Plot per-individual missing data ###
 # Provide population IDs to missing data, based on names
 missing_data.df$pop <- rep(x = NA, times = nrow(missing_data.df))
 
@@ -127,8 +134,8 @@ write.table(x = loci, file = "03_results/retained_loci.txt", sep = "\t", quote =
 ## Per locus statistics
 
 # If file already exists, do not re-run per_locus_stats
-if(file.exists(Sys.glob(paths = "03_results/per_locus_stats_*.txt"))){
-  
+if(length(Sys.glob(paths = "03_results/per_locus_stats_*.txt")) != 0){
+
   print(paste0("Per locus data information available, loading ", Sys.glob("03_results/per_locus_stats_*.txt")))
   
   per_loc_stats.df <- read.delim(file = Sys.glob("03_results/per_locus_stats_*.txt"), header = TRUE)
@@ -143,7 +150,7 @@ if(file.exists(Sys.glob(paths = "03_results/per_locus_stats_*.txt"))){
   
 }
 
-# Plot (still contains HOBS outliers... # TODO is it intentional? otherwise use %in% 'loci')
+# Plot all marker HOBS
 pdf(file = "03_results/per_locus_Hobs.pdf", width = 6, height = 5) 
 plot(x = per_loc_stats.df$Hobs
      , xlab = "Marker (index)"
@@ -155,12 +162,12 @@ abline(h = 0.5, lty = 3)
 dev.off()
 
 
-## Per locus, per population Hardy-Weinberg proportion statistics
+### Per locus, per population Hardy-Weinberg proportion statistics ###
 # If file already exists, do not re-run
 files_to_read <- NULL; hwe.list <- list()
 if(file.exists("03_results/HWE_result_alpha_0.01.txt")){
   
-  print("Missing data information available, loading")
+  print("HWE results available, loading")
   
   files_to_read <- list.files(path = "03_results/", pattern = "per_locus_hwe")
   shortname <- gsub(pattern = "per_locus_hwe_|\\.txt", replacement = "", x = files_to_read)
@@ -176,7 +183,7 @@ if(file.exists("03_results/HWE_result_alpha_0.01.txt")){
   per_locus_hwe_JPN.df <- hwe.list[["JPN"]]
   per_locus_hwe_VIU.df <- hwe.list[["VIU"]]
   
-  
+# If the file does not exist, then run the function  
 }else{
   
   print("Information is not available, generating")
@@ -189,22 +196,22 @@ if(file.exists("03_results/HWE_result_alpha_0.01.txt")){
 col.oi <- grep(pattern = "Pr", x = colnames(per_locus_hwe_BC.df))
 
 # Identify mnames of outliers
-hwe_outlier_mname_BC.vec     <-  per_locus_hwe_BC.df[per_locus_hwe_BC.df[, col.oi] < 0.01, "mname"]
+hwe_outlier_mname_BC.vec     <-   per_locus_hwe_BC.df[per_locus_hwe_BC.df[, col.oi] < 0.01, "mname"]
 hwe_outlier_mname_JPN.vec    <- per_locus_hwe_JPN.df[per_locus_hwe_JPN.df[, col.oi] < 0.01, "mname"]
 hwe_outlier_mname_VIU.vec    <- per_locus_hwe_VIU.df[per_locus_hwe_VIU.df[, col.oi] < 0.01, "mname"]
 
 # How many outliers (p < 0.01) per population
-length(hwe_outlier_mname_BC.vec)    #  705 markers out of HWE
-length(hwe_outlier_mname_JPN.vec)   # 1986 markers out of HWE
-### TODO: calculate raw again, as number above changed slightly - rounding issue when writing to file? 
-length(hwe_outlier_mname_VIU.vec)   # 1028 markers out of HWE
+length(hwe_outlier_mname_BC.vec)    #  703 markers out of HWE
+length(hwe_outlier_mname_JPN.vec)   # 1773 markers out of HWE
+length(hwe_outlier_mname_VIU.vec)   # 1015 markers out of HWE
 
 # How many unique HWE deviating markers?  
 markers_to_drop <- unique(c(hwe_outlier_mname_BC.vec, hwe_outlier_mname_JPN.vec, hwe_outlier_mname_VIU.vec))
-length(markers_to_drop) # 2747 ( the sum total of each is 3719, so there are ~1000 markers that are seen twice)
+length(markers_to_drop)             # 2578 unique markers out of HWE in at least one population
+length(hwe_outlier_mname_BC.vec) + length(hwe_outlier_mname_JPN.vec) + length(hwe_outlier_mname_VIU.vec) # 3491 markers with redundant counts
 
 markers_to_keep <- setdiff(x = locNames(obj), y = markers_to_drop)
-length(markers_to_keep) # 6652 markers to keep
+length(markers_to_keep) # 6797 markers to keep
 
 obj <- obj[, loc=markers_to_keep]
 obj
@@ -212,25 +219,20 @@ obj
 ## Remove Hobs > 0.5 markers 
 # Which markers are greater than 0.5 heterozygosity?
 hobs.outliers <- per_loc_stats.df[per_loc_stats.df$Hobs > 0.5, "mname"] 
-length(hobs.outliers) # 202 markers
+length(hobs.outliers) # 211 markers
 
 # How many hobs outliers remain after samples were dropped for HWE deviation?
 hobs.outliers.remaining <- intersect(hobs.outliers, locNames(obj))
-length(hobs.outliers.remaining) # 68 remain, should drop these too
+length(hobs.outliers.remaining) # 74 remain, should drop these too
 
 keep <- setdiff(x = locNames(obj), y = hobs.outliers)
-length(keep) # 6584 remain
+length(keep) # 6723 remain
 
 # Drop Hobs > 0.5 loci from genind
 obj <- obj[, loc=keep] # 
 obj
 
-##### 03.5 Post-all filters #####
-# Save out colours to be used downstream
-colours
-colnames(x = colours) <- c("collection", "colour")
-write.csv(x = colours, file = "00_archive/formatted_cols.csv", quote = F, row.names = F)
-
+#### 0.4 Export ####
 # Write out object
 save.image(file = "03_results/post_all_filters.RData")
 
