@@ -183,9 +183,19 @@ note: output will be in `simple_pop_stats_pyes/03_results`
 This will do the following: 
 - set up colours
 - calculate missing data by individual, plot, and remove excess missing individuals
-- calculate per locus HWE deviation and excess obs. heterozygosity, and filter
+- calculate per locus HWE deviation and excess obs. heterozygosity, and filter           
 ...and will output `03_results/post_all_filters.RData`.        
 
+After filtering, open and run interactively:        
+`ms_scallop_popgen/01_scripts/pyes_popgen_simple_pop_stats_analysis.R`           
+
+This will do the following:      
+- PCA
+- DAPC
+- genetic differentiation (FST) calculation
+- private alleles
+- estimate inbreeding coefficient (F)
+- estimate population-specific inter-individual relatedness
 
 
 ## 5. Relatedness
