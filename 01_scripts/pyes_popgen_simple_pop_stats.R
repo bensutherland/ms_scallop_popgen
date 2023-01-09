@@ -65,6 +65,11 @@ if(file.exists("03_results/missing_data_per_indiv.csv")){
   
 }
 
+head(missing_data.df)
+
+# What is the average missing data, prior to removals
+mean(missing_data.df$ind.per.missing) # 0.08
+sd(missing_data.df$ind.per.missing)   # 0.12 (12.2%)
 
 ### Plot per-individual missing data ###
 # Provide population IDs to missing data, based on names
@@ -80,7 +85,7 @@ head(missing_data.df)
 
 # Combine colours to dataframe for plotting, don't sort, as it is still in the same order as the obj
 colours
-plot_cols.df <- merge(x = missing_data.df, y = colours, by.x = "pop", by.y = "pops_in_genepop", all.x = T
+plot_cols.df <- merge(x = missing_data.df, y = colours, by.x = "pop", by.y = "collection", all.x = T
                       , sort = F
 )
 
@@ -128,6 +133,10 @@ write.table(x = inds, file = "03_results/retained_individuals.txt", sep = "\t", 
 write.table(x = loci, file = "03_results/retained_loci.txt", sep = "\t", quote = F
             , row.names = F, col.names = F
 )
+
+# Percent missing post filters? 
+mean(missing_data.df[missing_data.df$ind.per.missing < 0.3, "ind.per.missing"]) # 0.050
+sd(missing_data.df[missing_data.df$ind.per.missing < 0.3, "ind.per.missing"])   # 0.043
 
 
 ##### 03.2 Loci by HWE and excess Hobs #####
@@ -231,6 +240,79 @@ length(keep) # 6723 remain
 # Drop Hobs > 0.5 loci from genind
 obj <- obj[, loc=keep] # 
 obj
+
+
+##### 03.3 Post-indiv missing data filter allele freq calculations #####
+
+# Convert to genlight
+obj.gl <- gi2gl(gi = obj, parallel = T)
+
+# Calculate frequency of second allele
+myFreq <- glMean(obj.gl)
+
+# Ensure each locus second allele is the minor allele
+for(i in 1:length(myFreq)){
+  
+  if(myFreq[i] > 0.5){
+    
+    myFreq[i] <- 1-myFreq[i]
+    
+  }else{
+    
+    myFreq[i] <- myFreq[i]
+    
+  }
+  
+}
+
+## Final MAF filter
+MAF_rem_final <- names(myFreq[which(myFreq < 0.01)])
+length(MAF_rem_final)
+markers_to_keep <- setdiff(x = locNames(obj), y = MAF_rem_final)
+obj <- obj[, loc=markers_to_keep]
+
+# Keep AF of only the retained variants
+myFreq <- myFreq[which(myFreq >= 0.01)]
+length(myFreq)
+
+# Plot
+pdf(file = paste0("03_results/maf_hist_post_filter.pdf"), width = 6, height = 4)
+hist(myFreq
+     #, proba=T # note: does not sum to 1, not worth using
+     , col="gold", xlab = "Minor allele frequency (MAF)"
+     , main = ""
+     #, ylim = c(0, 2500)
+     , ylab = "Number of loci"
+     , las = 1
+     , breaks = 20
+)
+text(x = 0.4, y = 1000, labels = paste("n = ", length(myFreq), " loci", sep = "" ))
+dev.off()
+
+# Save out the MAF calculation as a table
+myFreq <- round(myFreq, digits = 3)
+write.table(x = myFreq, file = "03_results/allele_freq_retained_loci.txt"
+            , sep = "\t", quote = F
+            , row.names = T, col.names = F
+)
+
+# Exploration
+table(myFreq < 0.01) # note that there are alleles that are under MAF 0.01 (after the filters?)
+table(myFreq < 0.1) 
+
+
+##### 03.4 Variants per pop #####
+obj.sep <- seppop(x = obj)
+BC.final <- obj.sep$BC
+BC.final.gl <- gi2gl(gi = BC.final)
+myFreq.final.bc <- glMean(BC.final.gl)
+table(myFreq.final.bc==1)
+
+## BUG HERE ##
+obj.bc.no.mono <- drop_loci(df = BC.final, drop_monomorphic = TRUE)
+obj.VIU.no.mono <- drop_loci(df = obj.sep$VIU, drop_monomorphic = TRUE)
+obj.JPN.no.mono <- drop_loci(df = obj.sep$JPN, drop_monomorphic = TRUE)
+## BUG HERE ##
 
 #### 0.4 Export ####
 # Write out object
