@@ -302,21 +302,16 @@ table(myFreq < 0.1)
 
 
 ##### 03.4 Variants per pop #####
-obj.sep <- seppop(x = obj)
-BC.final <- obj.sep$BC
-BC.final.gl <- gi2gl(gi = BC.final)
-myFreq.final.bc <- glMean(BC.final.gl)
-table(myFreq.final.bc==1)
-
-## BUG HERE ##
-obj.bc.no.mono <- drop_loci(df = BC.final, drop_monomorphic = TRUE)
-obj.VIU.no.mono <- drop_loci(df = obj.sep$VIU, drop_monomorphic = TRUE)
-obj.JPN.no.mono <- drop_loci(df = obj.sep$JPN, drop_monomorphic = TRUE)
-## BUG HERE ##
+obj.sep <- seppop(x = obj, drop = TRUE) # Note: here "drop" is necessary to discard alleles that are no longer present in the subset of the data
+drop_loci(df = obj.sep$BC, drop_monomorphic = T)
+drop_loci(df = obj.sep$JPN, drop_monomorphic = T)
+drop_loci(df = obj.sep$VIU, drop_monomorphic = T)
+rm(obj.filt)
 
 #### 0.4 Export ####
 # Write out object
 save.image(file = "03_results/post_all_filters.RData")
 
+# Go to "01_scripts/pyes_popgen_simple_pop_stats_analysis.R
 
-# Go to "01_scripts/pyes_popgen_simple_pop_stats_analysis.R"
+
