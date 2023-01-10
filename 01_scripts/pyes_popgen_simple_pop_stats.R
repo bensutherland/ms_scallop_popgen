@@ -92,7 +92,7 @@ plot_cols.df <- merge(x = missing_data.df, y = colours, by.x = "pop", by.y = "co
 # Plot missing data by individual
 pdf(file = "03_results/geno_rate_by_ind.pdf", width = 8, height = 5)
 plot(1 - plot_cols.df$ind.per.missing, ylab = "Genotyping rate (%)"
-     , col = plot_cols.df$my.cols
+     , col = plot_cols.df$colour
      , las = 1
      , xlab = "Individual"
      , ylim = c(0,1)
@@ -101,7 +101,7 @@ plot(1 - plot_cols.df$ind.per.missing, ylab = "Genotyping rate (%)"
 abline(h = 0.7, lty = 3)
 
 legend("bottomright", legend = unique(plot_cols.df$pop)
-       , fill = unique(plot_cols.df$my.cols)
+       , fill = unique(plot_cols.df$colour)
        , cex = 1.0
        , bg = "white"
 )
