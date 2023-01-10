@@ -145,3 +145,7 @@ relatedness_calc(data = obj, datatype = "SNP") # will output as "03_results/kins
 relatedness_plot(file = "03_results/kinship_analysis_2023-01-06.Rdata", same_pops = TRUE, plot_by = "codes", pdf_width = 7, pdf_height = 5)
 
 # single SNP per locus analysis is complete
+
+# Comparison between VIU and JPN HOBS is available here: 
+#"~/Documents/00_sutherland_bioinformatics/VIU_scallop/ms_scallop_popgen/01_scripts/per-locus_Hobs_compare_JPN_VIU.R"
+# and will use "03_results/post_all_filters.RData"
