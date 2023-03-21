@@ -160,12 +160,13 @@ mv 05-stacks/populations.* 05-stacks/popn_out_microhaps/
 
 ### c. Convert output plink files
 For these steps, you will use the single SNP per locus data.     
-`cp 05-stacks/popn_out_single_snp/populations.plink.* ./05-stacks/`         
 
 Convert plink files to a useable format for adegenet:        
-`plink --ped 05-stacks/populations.plink.ped --map 05-stacks/populations.plink.map --maf 0.01 --recode A --allow-extra-chr --out 05-stacks/populations_single_snp`       
-Note: --recode creates a new text fileset, and the A modifier causes additive (0/1/2) format to be generated, which is useful for input into R.           
-Will output `05-stacks/populations_single_snp.raw`, which is the input file in the R code for the analysis.      
+`plink --ped 05-stacks/popn_out_single_snp/populations.plink.ped --map 05-stacks/popn_out_single_snp/populations.plink.map --maf 0.01 --recode A --allow-extra-chr --out 05-stacks/popn_out_single_snp/populations_single_snp`
+
+Notes: `--recode` creates a new text fileset, and the A modifier causes additive (0/1/2) format to be generated, which is useful for input into R.           
+
+Output: `05-stacks/popn_out_single_snp/populations_single_snp.raw`, the input file for R analyses.       
 
 
 ## 4. ms_scallop_popgen - genetic data analyses in R
