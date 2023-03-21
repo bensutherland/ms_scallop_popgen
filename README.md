@@ -107,7 +107,7 @@ note: you can now go back and recalculate sample stats if you choose, but save t
 ## 3. stacks_workflow - genotype
 Execute all commands from within the `stacks_workflow` repository.         
 
-### a. Run Stacks v.2.0 genotyper    
+### a. Run Stacks v.2.0 genotyper 
 Update the number of cores, then run:      
 `00_scripts/stacks2_gstacks_reference.sh`        
 
@@ -158,7 +158,7 @@ mv 05-stacks/populations.* 05-stacks/popn_out_microhaps/
 
 ``` 
 
-### c. Convert output plink files
+### e. Convert output plink files
 For these steps, you will use the single SNP per locus data.     
 
 Convert plink files to a useable format for adegenet:        
@@ -169,24 +169,28 @@ Notes: `--recode` creates a new text fileset, and the A modifier causes additive
 Output: `05-stacks/popn_out_single_snp/populations_single_snp.raw`, the input file for R analyses.       
 
 
-## 4. ms_scallop_popgen - genetic data analyses in R
-Import the formatted plink data (i.e., `../stacks_workflow/05-stacks/*.raw`) into R and make a genind file:     
-`ms_scallop_popgen/01_scripts/pyes_popgen_analysis.R`        
-Output: `./03_results/prepared_genind.RData`, and several plots in `../stacks_workflow/12-results/`.          
+## 4. Population genetic analyses
+The following will be conducted in the repo `ms_scallop_popgen` and will use the R environment.         
 
-Copy output to simple_pop_stats repo:         
-`cp ./03_results/prepared_genind.RData ../simple_pop_stats_pyes/02_input_data/`      
+### a. Import data
+Import the formatted plink data from above into R and convert to genind:     
+`ms_scallop_popgen/01_scripts/01_import_plink_to_genind.R`        
+Output: `./03_results/prepared_genind.RData`.          
 
-Source `simple_pop_stats/01_scripts/simple_pop_stats_start.R`, then open and run interactively:      
-`ms_scallop_popgen/01_scripts/pyes_popgen_simple_pop_stats.R`         
-note: output will be in `simple_pop_stats_pyes/03_results`      
+### b. Characterize and filter data
+Characterize the genind file and filter based on missing data:       
+`ms_scallop_popgen/01_scripts/02_sps_char_and_filt.R`      
+
+This will require you to source `simple_pop_stats/01_scripts/simple_pop_stats_start.R`.       
+Output will be in `simple_pop_stats_pyes/03_results`      
 
 This will do the following: 
-- set up colours
+- designate colours for each collection
 - calculate missing data by individual, plot, and remove excess missing individuals
 - calculate per locus HWE deviation and excess obs. heterozygosity, and filter           
 ...and will output `03_results/post_all_filters.RData`.        
 
+### c. Population genetic analysis
 After filtering, open and run interactively:        
 `ms_scallop_popgen/01_scripts/pyes_popgen_simple_pop_stats_analysis.R`           
 
