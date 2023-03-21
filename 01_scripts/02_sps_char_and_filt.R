@@ -1,7 +1,7 @@
 # simple_pop_stats component of the Yesso scallop RADseq analysis
 # B. Sutherland
 # Initialized 2022-12-05
-# Requires running "ms_scallop_popgen/01_scripts/pyes_popgen_analysis.R" first
+# Requires running "ms_scallop_popgen/01_scripts/01_import_plink_to_genind.R" first
 
 # Prior to running the following, source simple_pop_stats and choose Yesso scallop
 
