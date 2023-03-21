@@ -6,66 +6,48 @@
 # Prior to running the following, source simple_pop_stats and choose Yesso scallop
 
 #### 01. Load Data ####
-load(file = "02_input_data/prepared_genind.RData") # loaded from prerequisite script above
+load(file = "../ms_scallop_popgen/03_results/prepared_genind.RData") # loaded from prerequisite script above
 datatype <- "SNP" # normally assigned by load_genepop() when input is a genepop
 
 obj <- my.data.gid
 obj
 
 #### 02. Prepare Data ####
-unique(pop(obj))
-
 characterize_genepop(obj)
 
 ### Prepare Colours ###
 ## Define population colours
-pops_in_genepop <- unique(pop(obj))
-pops_in_genepop.df <- as.data.frame(pops_in_genepop)
+pops_in_genepop.df <- unique(pop(obj))
+pops_in_genepop.df <- as.data.frame(pops_in_genepop.df)
+colnames(pops_in_genepop.df) <- "collection"
+pops_in_genepop.df
 
-## Download colours file from previous git repo to see previously used colours in Pacific oyster
-# url = "https://raw.githubusercontent.com/bensutherland/ms_oyster_popgen/master/00_archive/my_cols.csv" # only need to run once
-# destfile <- "00_archive/my_cols.csv"
-# download.file(url, destfile)   # only need to run once
-#my_colours <- read.csv(destfile)
-
-# Manually write, based on the above where possible
+# Manually designate colours
 pop_colours <- matrix(c("BC", "JPN", "VIU", "purple1", "turquoise4", "red"), nrow = 3, ncol = 2)
-colnames(pop_colours) <- c("my.pops", "my.cols")
+colnames(pop_colours) <- c("collection", "colour")
+pop_colours
 
-# Connect colours to empirical populations
-colours <- merge(x = pops_in_genepop.df, y =  pop_colours, by.x = "pops_in_genepop", by.y = "my.pops"
+# Connect colours to present populations
+colours <- merge(x = pops_in_genepop.df, y =  pop_colours, by = "collection"
                  #, sort = F
                  , all.x = T
 )
 colours
 
-# Save out colours (used later)
+# Clean space
+rm(pop_colours)
+rm(pops_in_genepop.df)
+
+# Save out colours to use later
 colours
-colnames(x = colours) <- c("collection", "colour")
 write.csv(x = colours, file = "00_archive/formatted_cols.csv", quote = F, row.names = F)
 
 
 #### 03. Characterize missing data (indiv) and filter ####
 ##### 03.1 Individuals - missing data #####
-
-# If file already exists, do not re-run percent_missing_data
-if(file.exists("03_results/missing_data_per_indiv.csv")){
-  
-  print("Missing data information available, loading")
-  
-  missing_data.df <- read.csv(file = "03_results/missing_data_per_indiv.csv")
-  
-}else{
-  
-  print("Missing data information is not available, generating")
-  
-  percent_missing_by_ind(df = obj)
-  
-  write.csv(x = missing_data.df, file = "03_results/missing_data_per_indiv.csv", row.names = F)
-  
-}
-
+percent_missing_by_ind(df = obj)
 head(missing_data.df)
+write.csv(x = missing_data.df, file = "03_results/missing_data_per_indiv.csv", row.names = F) # save results
 
 # What is the average missing data, prior to removals
 mean(missing_data.df$ind.per.missing) # 0.08
@@ -82,8 +64,9 @@ missing_data.df$pop[grep(pattern = "VIU", x = missing_data.df$ind)] <- "VIU"
 table(missing_data.df$pop)
 
 head(missing_data.df)
+tail(missing_data.df)
 
-# Combine colours to dataframe for plotting, don't sort, as it is still in the same order as the obj
+# Integrate colours into dataframe for plotting. Note: don't sort, as it is still in the same order as the obj
 colours
 plot_cols.df <- merge(x = missing_data.df, y = colours, by.x = "pop", by.y = "collection", all.x = T
                       , sort = F
@@ -110,7 +93,7 @@ dev.off()
 
 ## Filter individuals
 # Identify which samples to retain based on genotyping rate
-#  to keep inds with 70% genotyping rate (% missing < 0.3)
+#  to keep inds with >=70% genotyping rate (% missing < 0.3)
 keep <- missing_data.df[missing_data.df$ind.per.missing < 0.3, "ind"]
 print(paste0("Retaining ", length(keep), " of the total ", nInd(obj), " individuals"))
 
@@ -141,23 +124,7 @@ sd(missing_data.df[missing_data.df$ind.per.missing < 0.3, "ind.per.missing"])   
 
 ##### 03.2 Loci by HWE and excess Hobs #####
 ## Per locus statistics
-
-# If file already exists, do not re-run per_locus_stats
-if(length(Sys.glob(paths = "03_results/per_locus_stats_*.txt")) != 0){
-
-  print(paste0("Per locus data information available, loading ", Sys.glob("03_results/per_locus_stats_*.txt")))
-  
-  per_loc_stats.df <- read.delim(file = Sys.glob("03_results/per_locus_stats_*.txt"), header = TRUE)
-  
-}else{
-  
-  print("Per locus data information is not available, generating")
-  
-  per_locus_stats(data = obj)
-  
-  # The function will write out already to file, as per_locus_stats_<date>.txt
-  
-}
+per_locus_stats(data = obj)
 
 # Plot all marker HOBS
 pdf(file = "03_results/per_locus_Hobs.pdf", width = 6, height = 5) 
@@ -172,34 +139,7 @@ dev.off()
 
 
 ### Per locus, per population Hardy-Weinberg proportion statistics ###
-# If file already exists, do not re-run
-files_to_read <- NULL; hwe.list <- list()
-if(file.exists("03_results/HWE_result_alpha_0.01.txt")){
-  
-  print("HWE results available, loading")
-  
-  files_to_read <- list.files(path = "03_results/", pattern = "per_locus_hwe")
-  shortname <- gsub(pattern = "per_locus_hwe_|\\.txt", replacement = "", x = files_to_read)
-  
-  # Read them all in
-  for(i in 1:length(shortname)){
-    
-  hwe.list[[shortname[i]]]  <-  read.delim(file = paste0("03_results/per_locus_hwe_", shortname[i], ".txt" ))
-    
-  }
-  
-  per_locus_hwe_BC.df <- hwe.list[["BC"]]
-  per_locus_hwe_JPN.df <- hwe.list[["JPN"]]
-  per_locus_hwe_VIU.df <- hwe.list[["VIU"]]
-  
-# If the file does not exist, then run the function  
-}else{
-  
-  print("Information is not available, generating")
-  
-  hwe_eval(data = obj, alpha = 0.01)
-  
-}
+hwe_eval(data = obj, alpha = 0.01)
 
 # Identify column with the p-val
 col.oi <- grep(pattern = "Pr", x = colnames(per_locus_hwe_BC.df))
@@ -243,43 +183,15 @@ obj
 
 
 ##### 03.3 Post-indiv missing data filter allele freq calculations #####
-
-# Convert to genlight
-obj.gl <- gi2gl(gi = obj, parallel = T)
-
-# Calculate frequency of second allele
-myFreq <- glMean(obj.gl)
-
-# Ensure each locus second allele is the minor allele
-for(i in 1:length(myFreq)){
-  
-  if(myFreq[i] > 0.5){
-    
-    myFreq[i] <- 1-myFreq[i]
-    
-  }else{
-    
-    myFreq[i] <- myFreq[i]
-    
-  }
-  
-}
-
-## Final MAF filter
-MAF_rem_final <- names(myFreq[which(myFreq < 0.01)])
-length(MAF_rem_final)
-markers_to_keep <- setdiff(x = locNames(obj), y = MAF_rem_final)
-obj <- obj[, loc=markers_to_keep]
-
-# Keep AF of only the retained variants
-myFreq <- myFreq[which(myFreq >= 0.01)]
-length(myFreq)
+maf_filt(data = obj, maf = 0.01)
+myFreq
+obj <- obj_maf_filt # Rename
 
 # Plot
 pdf(file = paste0("03_results/maf_hist_post_filter.pdf"), width = 6, height = 4)
 hist(myFreq
      #, proba=T # note: does not sum to 1, not worth using
-     , col="gold", xlab = "Minor allele frequency (MAF)"
+     , col="grey", xlab = "Minor allele frequency (MAF)"
      , main = ""
      #, ylim = c(0, 2500)
      , ylab = "Number of loci"
@@ -297,7 +209,7 @@ write.table(x = myFreq, file = "03_results/allele_freq_retained_loci.txt"
 )
 
 # Exploration
-table(myFreq < 0.01) # note that there are alleles that are under MAF 0.01 (after the filters?)
+table(myFreq < 0.01)
 table(myFreq < 0.1) 
 
 
@@ -306,7 +218,13 @@ obj.sep <- seppop(x = obj, drop = TRUE) # Note: here "drop" is necessary to disc
 drop_loci(df = obj.sep$BC, drop_monomorphic = T)
 drop_loci(df = obj.sep$JPN, drop_monomorphic = T)
 drop_loci(df = obj.sep$VIU, drop_monomorphic = T)
+
+##### Clean up space ####
+rm(my.data.gid)
+rm(obj_filt)
+rm(obj_maf_filt)
 rm(obj.filt)
+gc()
 
 #### 0.4 Export ####
 # Write out object
