@@ -57,7 +57,9 @@ text(x = 0.4, y = 800, labels = paste("n = ", length(myFreq.JPN), " loci", sep =
 dev.off()
 
 
-#### 04. Analysis ####
+#### 03. Multivariate analysis ####
+obj
+
 ## Multivariate
 # PCA from genind
 pca_from_genind(data = obj
@@ -67,13 +69,6 @@ pca_from_genind(data = obj
                 , retain_pca_obj = TRUE
                 , colour_file = "00_archive/formatted_cols.csv"
                 )
-
-# Determine variance per axis
-str(pca.obj) # $eig holds the absolute variance, this can be standardized
-pca.obj$eig[1:10]
-sum(pca.obj$eig)
-(100 * pca.obj$eig / sum(pca.obj$eig))[1:10]
-#16 / 251 * 100 # testing
 
 # DAPC from genind
 dapc_from_genind(data = obj
@@ -87,20 +82,11 @@ dapc_from_genind(data = obj
                  , dapc.height = 5
                  )
 
-## Genetic differentiation
+#### 04. Genetic differentiation and private alleles  ####
 calculate_FST(format = "genind", dat = obj, separated = FALSE, bootstrap = TRUE)
 
-## Private alleles (but recall that pa's were also evaluated by Stacks populations module)
-regional_obj <- obj
-
-# Combine related pops to query private alleles at regional level
-unique(pop(regional_obj))
-# pop(regional_obj) <- gsub(pattern = "VIU_offspring|VIU_parent", replacement = "VIU", x = pop(regional_obj)) # combine VIU
-# pop(regional_obj) <- gsub(pattern = "PEN|FRA|JPN", replacement = "JPN", x = pop(regional_obj))              # combine JPN lineage
-# unique(pop(regional_obj))
-
-pa <- private_alleles(gid = regional_obj)
-str(pa)
+## Private alleles
+pa <- private_alleles(gid = obj)
 pa.t <- t(pa)
 head(pa.t)
 table(pa.t[,"BC"] > 0)
@@ -111,23 +97,19 @@ table(pop(regional_obj))
 
 write.csv(x = pa, file = "03_results/private_alleles.csv", quote = F)
 
-# Downsample and reassess
-regional_obj_downsampled <- downsample_pops(data = regional_obj, subset_method = "min")
-pa_downsampled <- private_alleles(gid = obj_subset)
-pa_downsampled_t <- t(pa_downsampled)
-head(pa_downsampled_t)
-table(pa_downsampled_t[,"BC"] > 0)
-table(pa_downsampled_t[,"JPN"] > 0)
-table(pa_downsampled_t[,"VIU"] > 0)
+#### 05. Relatedness and Inbreeding ####
+obj
 
-table(pop(obj_subset))
+## Relatedness
+# Calculate inter-individual relatedness
+relatedness_calc(data = obj, datatype = "SNP") # will output as "03_results/kinship_analysis_<date>.Rdata"
 
-write.csv(x = pa_downsampled, file = "03_results/private_alleles_downsampled.csv", quote = F)
-
+# Plot
+relatedness_plot(file = "03_results/kinship_analysis_2023-01-06.Rdata", same_pops = TRUE, plot_by = "codes", pdf_width = 7, pdf_height = 5)
 
 ## Inbreeding
 # Estimating inbreeding (from adegenet tutorial)
-obj_BC <- seppop(x = obj)$BC
+obj_BC  <- seppop(x = obj)$BC
 obj_JPN <- seppop(x = obj)$JPN
 obj_VIU <- seppop(x = obj)$VIU
 
@@ -137,60 +119,41 @@ F_coeff_BC  <- inbreeding(x = obj_BC, N = 200)   # Calculates 100 values for eac
 F_coeff_JPN <- inbreeding(x = obj_JPN, N = 200) 
 F_coeff_VIU <- inbreeding(x = obj_VIU, N = 200) 
 
+# Note: receiving warnings in all the above
+
 # ## plot the first 10 results (for first ten individuals) (example using BC)
-# invisible(sapply(F_coeff_BC[1:10], function(e) plot(density(e)
-#                                                     , xlab="F"
-#                                                     , xlim=c(0,1)
-#                                                     , main="Density of the sampled F values")
-#                  )
-#           )
-
-
 pdf(file = "03_results/per_popn_mean_per_indiv_F_val.pdf", width = 6, height = 7)
 par(mfrow=c(3,1))
 
 ## Compute means for all individuals
-Fmean_BC=sapply(F_coeff_BC, mean)
+Fmean_BC <- sapply(F_coeff_BC, mean) # Provides the average value per individual
 hist(Fmean_BC, col="grey", xlab="mean value of F",
      main="Per-indiv average F (BC)"
-     , xlim = c(0,1)
+     , xlim = c(0.4, 0.6)
      , las = 1
 )
 
-text(x = 0.8, y = 5, label = paste0("mean = ", round(mean(sapply(F_coeff_BC, mean)), digits = 3)))
+#text(x = 0.8, y = 5, label = paste0("mean = ", round(mean(sapply(F_coeff_BC, mean)), digits = 3)))
 
-Fmean_JPN=sapply(F_coeff_JPN, mean)
+Fmean_JPN <- sapply(F_coeff_JPN, mean)
 hist(Fmean_JPN, col="grey", xlab="mean value of F",
      main="Per-indiv average F (JPN)"
-     , xlim = c(0,1)
+     , xlim = c(0.4, 0.6)
      , las = 1
 )
 
-text(x = 0.8, y = 15, label = paste0("mean = ", round(mean(sapply(F_coeff_JPN, mean)), digits = 3)))
+#text(x = 0.8, y = 15, label = paste0("mean = ", round(mean(sapply(F_coeff_JPN, mean)), digits = 3)))
 
-
-Fmean_VIU=sapply(F_coeff_VIU, mean)
+Fmean_VIU <- sapply(F_coeff_VIU, mean)
 hist(Fmean_VIU, col="grey", xlab="mean value of F",
      main="Per-indiv average F (VIU)"
-     , xlim = c(0,1)
+     , xlim = c(0.4, 0.6)
      , las = 1
 )
 
-text(x = 0.8, y = 10, label = paste0("mean = ", round(mean(sapply(F_coeff_VIU, mean)), digits = 3)))
+#text(x = 0.8, y = 10, label = paste0("mean = ", round(mean(sapply(F_coeff_VIU, mean)), digits = 3)))
 dev.off()
 
-#### Relatedness ####
-require("dartR")
-require("related")
-require(tidyr)
-
-obj
-
-# Calculate inter-individual relatedness
-relatedness_calc(data = obj, datatype = "SNP") # will output as "03_results/kinship_analysis_<date>.Rdata"
-
-# Plot
-relatedness_plot(file = "03_results/kinship_analysis_2023-01-06.Rdata", same_pops = TRUE, plot_by = "codes", pdf_width = 7, pdf_height = 5)
 
 # single SNP per locus analysis is complete
 
