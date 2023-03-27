@@ -158,7 +158,27 @@ mv 05-stacks/populations.* 05-stacks/popn_out_microhaps/
 
 ``` 
 
-### e. Convert output plink files
+### e. General characterization of microhaplotype data
+Determine the number of variants per RAD-tag:        
+`grep -vE '^#' 05-stacks/popn_out_microhaps/populations.haps.vcf | awk '{ print $4 }' - | awk ' { print length } ' - | sort -nr | uniq -c | sort -nrk2 | less`         
+...this works on the fourth column, which is the reference allele (e.g., TTTT).        
+
+Total the number of variants in all RAD-tags to be sure the above worked:      
+`grep -vE '^#' 05-stacks/popn_out_microhaps/populations.haps.vcf | awk '{ print $4 }' - | awk ' { print length } ' - | sort -nr | uniq -c | sort -nrk2 | awk '{sum+=$1} END {print sum}'`        
+
+Determine the number of alleles per RAD-tag:         
+```
+# First determine the number of alternate alleles that are present, as per commas in col 5
+grep -vE '^#' 05-stacks/popn_out_microhaps/populations.haps.vcf | awk '{ print $5 }' - | while read line ; do echo "$line" | tr -cd "," | wc -c ; done > allele_count.txt
+
+# Second, add two to each (one for three records per two commas, one for the REF allele)     
+awk '$1+=2' allele_count.txt | sort -rnk1 | uniq -c | less
+```
+
+Note: this may need to be done after filtering for HWE, or at least state that these loci may be deviating from HWE.      
+
+
+### f. Convert output plink files
 For these steps, you will use the single SNP per locus data.     
 
 Convert plink files to a useable format for adegenet:        
@@ -185,6 +205,7 @@ This will require you to source `simple_pop_stats/01_scripts/simple_pop_stats_st
 Output will be in `simple_pop_stats_pyes/03_results`      
 
 This will do the following: 
+- load `../ms_scallop_popgen/03_results/prepared_genind.RData`
 - designate colours for each collection
 - calculate missing data by individual, plot, and remove excess missing individuals
 - calculate per locus HWE deviation and excess obs. heterozygosity, and filter           
@@ -192,15 +213,17 @@ This will do the following:
 
 ### c. Population genetic analysis
 After filtering, open and run interactively:        
-`ms_scallop_popgen/01_scripts/pyes_popgen_simple_pop_stats_analysis.R`           
+`ms_scallop_popgen/01_scripts/03_sps_analysis.R`           
 
 This will do the following:      
-- PCA
-- DAPC
+- load `03_results/post_all_filters.Rdata`
+- create separate datasets for VIU or JPN, then filter by low MAF, plot MAF distributions
+- using sep VIU and JPN datasets, calc per loc stats (for HOBS), merge and plot (see `03_results/popn_sp_hobs_calc/`
+- multivariate statistics (i.e., PCA, DAPC)
 - genetic differentiation (FST) calculation
-- private alleles
+- identify private alleles for BC, JPN, VIU
+- estimate inter-individual relatedness between individuals
 - estimate inbreeding coefficient (F)
-- estimate population-specific inter-individual relatedness
 
 
 ## 5. Relatedness
@@ -229,11 +252,5 @@ cp ~/programs/fineRADstructure/FinestructureLibrary.R ./01_scripts/
 # The output figures will be in 04_fineRADstructure/ 
 
 ```
-
-
-
-
-
-
 
 
