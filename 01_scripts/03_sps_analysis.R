@@ -56,6 +56,56 @@ hist(myFreq.JPN
 text(x = 0.4, y = 800, labels = paste("n = ", length(myFreq.JPN), " loci", sep = "" ))
 dev.off()
 
+#### 03. Per locus statistics #####
+### Save out previous runs of per_locus_stats, where pops were not separated
+dir.create(path = "03_results/all_popn_per_loc_stats")
+filename <- basename(Sys.glob("03_results/per_locus_stats_*"))
+file.copy(from = paste0("03_results/", filename) , to = paste0("03_results/all_popn_per_loc_stats/", filename))
+
+### Make new working directory for population-specific per locus stats
+dir.create(path = "03_results/popn_sp_hobs_calc")
+
+### Population-specific per locus stats
+# JPN
+obj.JPN
+per_locus_stats(data = obj.JPN) # note: since there is only one popn, expect no Fit or Fst calc
+per_loc_stats_JPN.df <- per_loc_stats.df
+head(per_loc_stats_JPN.df)
+filename <- basename(Sys.glob("03_results/per_locus_stats_*"))
+filename <- tail(filename, n = 1) # take only the most recent
+file.copy(from = paste0("03_results/", filename) , to = "03_results/popn_sp_hobs_calc/per_locus_stats_JPN.txt")
+
+# VIU
+obj.VIU
+per_locus_stats(data = obj.VIU)
+per_loc_stats_VIU.df <- per_loc_stats.df
+filename <- basename(Sys.glob("03_results/per_locus_stats_*"))
+filename <- tail(filename, n = 1) # take only the most recent
+file.copy(from = paste0("03_results/", filename) , to = "03_results/popn_sp_hobs_calc/per_locus_stats_VIU.txt")
+
+## Direct comparison compare Hobs
+# Rename cols for clarity
+colnames(per_loc_stats_JPN.df)[which(colnames(per_loc_stats_JPN.df)=="Hobs")] <- "Hobs.JPN"
+colnames(per_loc_stats_VIU.df)[which(colnames(per_loc_stats_VIU.df)=="Hobs")] <- "Hobs.VIU"
+
+all_per_loc_data.df <- merge(x = per_loc_stats_JPN.df, y = per_loc_stats_VIU.df, by = "mname")
+head(all_per_loc_data.df)
+dim(all_per_loc_data.df) 
+# note: 3,539 polymorphic loci shared between both populations
+
+# Plot
+pdf(file = "03_results/popn_sp_hobs_calc/per_locus_hobs_VIU_vs_JPN.pdf", width = 5, height = 5)
+plot(x = all_per_loc_data.df$Hobs.JPN, y = all_per_loc_data.df$Hobs.VIU
+     , xlab = expression(per ~ locus ~ H[OBS] ~ (VIU))
+     , ylab = expression(per ~ locus ~ H[OBS] ~ (JPN))
+     , las = 1
+)
+abline(h = 0.5, lty = 2)
+abline(v = 0.5, lty = 2)
+dev.off()
+
+## Write out results
+write.csv(x = all_per_loc_data.df, file = "03_results/popn_sp_hobs_calc/popn_sp_JPN_VIU_HOBS.csv", quote = F)
 
 #### 03. Multivariate analysis ####
 obj
