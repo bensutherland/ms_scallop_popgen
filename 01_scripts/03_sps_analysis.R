@@ -16,6 +16,7 @@ obj.VIU <- obj.sep$VIU
 obj.JPN <- obj.sep$JPN
 obj.BC  <- obj.sep$BC
 
+# Filter to remove markers with population MAF < 0.01
 maf_filt(data = obj.VIU, maf = 0.01)
 obj.VIU <- obj_maf_filt
 myFreq.VIU <- myFreq
@@ -28,7 +29,7 @@ maf_filt(data = obj.BC, maf = 0.01)
 obj.BC <- obj_maf_filt
 myFreq.BC  <- myFreq
 
-# How many variants and what percentage are under 0.1? 
+# How many variants and what percentage are between 0.01 and 0.1? 
 table(myFreq.VIU < 0.1)
 table(myFreq.JPN < 0.1)
 table(myFreq.BC < 0.1)
@@ -38,19 +39,8 @@ table(myFreq.JPN < 0.1)[2] / length(myFreq.JPN) # 61.8%
 table(myFreq.BC < 0.1)[2] / length(myFreq.BC)   # 39.8%
 
 # Plot
-pdf(file = paste0("03_results/MAF_hist_VIU_JPN.pdf"), width = 7, height = 4)
-par(mfrow=c(1,2))
-hist(myFreq.VIU
-     #, proba=T # note: does not sum to 1, not worth using
-     , col="grey", xlab = "MAF (VIU)"
-     , main = ""
-     , ylim = c(0, 1250)
-     , ylab = "Number of loci"
-     , las = 1
-     , breaks = 20
-)
-text(x = 0.4, y = 800, labels = paste("n = ", length(myFreq.VIU), " loci", sep = "" ))
-
+pdf(file = paste0("03_results/MAF_hist_popn_sp.pdf"), width = 7.4, height = 3.5)
+par(mfrow=c(1,3))
 hist(myFreq.JPN
      #, proba=T # note: does not sum to 1, not worth using
      , col="grey", xlab = "MAF (JPN)"
@@ -60,8 +50,50 @@ hist(myFreq.JPN
      , las = 1
      , breaks = 20
 )
+abline(v = 0.1, lty = 3)
 text(x = 0.4, y = 800, labels = paste("n = ", length(myFreq.JPN), " loci", sep = "" ))
+text(x = 0.375, y = 700
+     , labels = paste0("MAF<0.1: "
+                       , round(x = as.numeric(table(myFreq.JPN < 0.1)[2] / length(myFreq.JPN)) * 100
+                               , digits = 1)
+                       , "%"))
+
+hist(myFreq.VIU
+     #, proba=T # note: does not sum to 1, not worth using
+     , col="grey", xlab = "MAF (VIU)"
+     , main = ""
+     , ylim = c(0, 1250)
+     , ylab = "Number of loci"
+     , las = 1
+     , breaks = 20
+)
+abline(v = 0.1, lty = 3)
+text(x = 0.4, y = 800, labels = paste("n = ", length(myFreq.VIU), " loci", sep = "" ))
+text(x = 0.375, y = 700
+     , labels = paste0("MAF<0.1: "
+                       , round(x = as.numeric(table(myFreq.VIU < 0.1)[2] / length(myFreq.VIU)) * 100
+                              , digits = 1)
+                       , "%"))
+
+hist(myFreq.BC
+     #, proba=T # note: does not sum to 1, not worth using
+     , col="grey", xlab = "MAF (BC farm)"
+     , main = ""
+     , ylim = c(0, 1250)
+     , ylab = "Number of loci"
+     , las = 1
+     , breaks = 20
+)
+abline(v = 0.1, lty = 3)
+text(x = 0.4, y = 800, labels = paste("n = ", length(myFreq.BC), " loci", sep = "" ))
+text(x = 0.375, y = 700
+     , labels = paste0("MAF<0.1: "
+                       , round(x = as.numeric(table(myFreq.BC < 0.1)[2] / length(myFreq.BC)) * 100
+                               , digits = 1)
+                       , "%"))
+
 dev.off()
+
 
 #### 03. Per locus statistics #####
 ### Save out previous runs of per_locus_stats, where pops were not separated
