@@ -14,6 +14,7 @@ obj
 # Create dataset per population
 obj.VIU <- obj.sep$VIU
 obj.JPN <- obj.sep$JPN
+obj.BC  <- obj.sep$BC
 
 maf_filt(data = obj.VIU, maf = 0.01)
 obj.VIU <- obj_maf_filt
@@ -23,12 +24,18 @@ maf_filt(data = obj.JPN, maf = 0.01)
 obj.JPN <- obj_maf_filt
 myFreq.JPN <- myFreq
 
+maf_filt(data = obj.BC, maf = 0.01)
+obj.BC <- obj_maf_filt
+myFreq.BC  <- myFreq
+
 # How many variants and what percentage are under 0.1? 
 table(myFreq.VIU < 0.1)
 table(myFreq.JPN < 0.1)
+table(myFreq.BC < 0.1)
 
 table(myFreq.VIU < 0.1)[2] / length(myFreq.VIU) # 49.7%
 table(myFreq.JPN < 0.1)[2] / length(myFreq.JPN) # 61.8%
+table(myFreq.BC < 0.1)[2] / length(myFreq.BC)   # 39.8%
 
 # Plot
 pdf(file = paste0("03_results/MAF_hist_VIU_JPN.pdf"), width = 7, height = 4)
