@@ -186,6 +186,86 @@ table(pop(regional_obj))
 
 write.csv(x = pa, file = "03_results/private_alleles.csv", quote = F)
 
+## Regional private alleles
+regional_obj <- obj
+unique(pop(regional_obj))
+pop(regional_obj) <- gsub(pattern = "VIU|BC", replacement = "CAN", x = pop(regional_obj))
+#pop(obj) # to check
+
+pa <- private_alleles(gid = regional_obj)
+pa.t <- t(pa)
+head(pa.t)
+table(pa.t[,"CAN"] > 0) # 690
+table(pa.t[,"JPN"] > 0) # 1401
+
+pa.df <- as.data.frame(pa.t)
+head(pa.df)
+CAN.pa <- rownames(pa.df[pa.df$CAN!=0,])
+CAN.pa <- gsub(pattern = "\\..*", replacement = "", x = CAN.pa)
+head(CAN.pa)
+
+JPN.pa <- rownames(pa.df[pa.df$JPN!=0,])
+JPN.pa <- gsub(pattern = "\\..*", replacement = "", x = JPN.pa)
+head(JPN.pa)
+
+# Compare frequency of regional pa to all loci
+maf_filt(data = obj, maf = 0) # calculate MAF, no cutoff keeps 6547 variants
+
+# Obtain frequencies of PA
+myFreq.JPN.pa <- myFreq[names(myFreq) %in% JPN.pa]
+length(myFreq.JPN.pa) # 1401
+myFreq.CAN.pa <- myFreq[names(myFreq) %in% CAN.pa]
+length(myFreq.CAN.pa) # 690
+
+# Obtain frequencies of non-PA
+myFreq.other <- myFreq[!(names(myFreq) %in% c(JPN.pa, CAN.pa))]
+length(myFreq.other) # 4456
+
+# Plot
+pdf(file = paste0("03_results/MAF_hist_pa.pdf"), width = 7.4, height = 3.5)
+par(mfrow=c(1,3))
+hist(myFreq.other
+     #, proba=T # note: does not sum to 1, not worth using
+     , col="grey", xlab = "MAF, shared"
+     , main = ""
+     , ylim = c(0, 700)
+     , xlim = c(0, 0.5)
+     , ylab = "Number of loci"
+     , las = 1
+     , breaks = 20
+)
+text(x = 0.4, y = 450, labels = paste("n = ", length(myFreq.other), " loci", sep = "" ))
+text(x = 0.375, y = 400, labels = paste0("median = ", round(median(myFreq.other), digits = 3)))
+
+hist(myFreq.JPN.pa
+     #, proba=T # note: does not sum to 1, not worth using
+     , col="grey", xlab = "MAF (JPN, private alleles)"
+     , main = ""
+     , ylim = c(0, 700)
+     , xlim = c(0,0.5)
+     , ylab = "Number of loci"
+     , las = 1
+     , breaks = 20
+)
+text(x = 0.4, y = 450, labels = paste("n = ", length(myFreq.JPN.pa), " loci", sep = "" ))
+text(x = 0.375, y = 400, labels = paste0("median = ", round(median(myFreq.JPN.pa), digits = 3)))
+
+hist(myFreq.CAN.pa
+     #, proba=T # note: does not sum to 1, not worth using
+     , col="grey", xlab = "MAF (CAN, private alleles)"
+     , main = ""
+     , ylim = c(0, 700)
+     , xlim = c(0, 0.5)
+     , ylab = "Number of loci"
+     , las = 1
+     , breaks = 20
+)
+text(x = 0.4, y = 450, labels = paste("n = ", length(myFreq.CAN.pa), " loci", sep = "" ))
+text(x = 0.375, y = 400, labels = paste0("median = ", round(median(myFreq.CAN.pa), digits = 3)))
+
+dev.off()
+
+
 #### 05. Relatedness and Inbreeding ####
 obj
 
