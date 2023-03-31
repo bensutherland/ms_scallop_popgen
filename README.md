@@ -180,7 +180,7 @@ Note: this may need to be done after filtering for HWE, or at least state that t
 Create a tab-delimited file with the chromosome name, the position of the microhap, the catalog ID from stacks, and the alleles (alleles are separated by a comma):      
 `grep -vE '^#' 05-stacks/popn_out_microhaps/populations.haps.vcf | awk '{ print $1 "\t" $2 "\t" $3 "\t" $4 "," $5 } ' - > 05-stacks/popn_out_microhaps/populations.haps_alleles.txt`    
 
-Open Rscript `ms_scallop_popgen/01_scripts/count_alleles_per_marker.R` and run interactively. This will output a file `ms_scallop_popgen/03_results/populations.haps_alleles_counts.txt`
+Open Rscript `ms_scallop_popgen/01_scripts/count_alleles_per_marker.R` and run interactively. This will output a file `05-stacks/popn_out_microhaps/populations.haps_alleles_counts.txt`
 
 ### f. Convert output plink files
 For these steps, you will use the single SNP per locus data.     
