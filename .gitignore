@@ -24,3 +24,5 @@
 FinestructureLibrary.R
 fineRADstructurePlot.R
 *.RData 
+*.gen
+
