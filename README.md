@@ -12,6 +12,7 @@ Software:
 `multiQC` https://multiqc.info/      
 `plink` https://zzz.bwh.harvard.edu/plink/plink2.shtml      
 `fineRADstructure` https://www.milan-malinsky.org/fineradstructure        
+`NeEstimator v.2` http://www.molecularfisherieslaboratory.com.au/neestimator-software/         
 _note: see R scripts for individual package requirements_
 
 Additional analytic repositories:       
@@ -258,3 +259,5 @@ cp ~/programs/fineRADstructure/FinestructureLibrary.R ./01_scripts/
 ```
 
 
+## 6. Effective population size
+Export genepop file with microhaplotype or single SNP per locus data from stacks, rename with `*.gen` file extension, and place in `ms_scallop_popgen/02_inputs` folder. Use the software NeEstimator v2 to estimate effective population size (Ne) per population. Suggested output folder is `05_NeEst`.        
