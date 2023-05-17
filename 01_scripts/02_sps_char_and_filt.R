@@ -47,7 +47,6 @@ write.csv(x = colours, file = "00_archive/formatted_cols.csv", quote = F, row.na
 ##### 03.1 Individuals - missing data #####
 percent_missing_by_ind(df = obj)
 head(missing_data.df)
-write.csv(x = missing_data.df, file = "03_results/missing_data_per_indiv.csv", row.names = F) # save results
 
 # What is the average missing data, prior to removals
 mean(missing_data.df$ind.per.missing) # 0.08
@@ -62,9 +61,6 @@ missing_data.df$pop[grep(pattern = "BC", x = missing_data.df$ind)] <- "BC"
 missing_data.df$pop[grep(pattern = "JPN", x = missing_data.df$ind)] <- "JPN"
 missing_data.df$pop[grep(pattern = "VIU", x = missing_data.df$ind)] <- "VIU"
 table(missing_data.df$pop)
-
-head(missing_data.df)
-tail(missing_data.df)
 
 # Integrate colours into dataframe for plotting. Note: don't sort, as it is still in the same order as the obj
 colours
@@ -230,6 +226,4 @@ gc()
 # Write out object
 save.image(file = "03_results/post_all_filters.RData")
 
-# Go to "01_scripts/pyes_popgen_simple_pop_stats_analysis.R
-
-
+# Go to "01_scripts/03_sps_analysis.R
