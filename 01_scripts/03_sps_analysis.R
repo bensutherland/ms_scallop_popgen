@@ -3,6 +3,9 @@
 # Initialized 2022-12-05
 # Requires first running "ms_scallop_popgen/01_scripts/02_sps_char_and_filt.R"
 
+install.packages("ggpubr")
+require("ggpubr")
+
 #### 01. Load Data ####
 load(file = "03_results/post_all_filters.RData") # loaded from prerequisite script above
 
@@ -146,6 +149,7 @@ dev.off()
 ## Write out results
 write.csv(x = all_per_loc_data.df, file = "03_results/popn_sp_hobs_calc/popn_sp_JPN_VIU_HOBS.csv", quote = F)
 
+
 #### 03. Multivariate analysis ####
 obj
 
@@ -158,6 +162,75 @@ pca_from_genind(data = obj
                 , retain_pca_obj = TRUE
                 , colour_file = "00_archive/formatted_cols.csv"
                 )
+
+## Prepare an eigenvalue plot for inset
+num_eigenvals <- 10
+vals.df <- as.data.frame(pca1$eig[1:num_eigenvals])
+colnames(vals.df)[1] <- "vals"
+vals.df$pc <- seq(1:num_eigenvals)
+vals.df
+colnames(vals.df) <- c("PVE", "PC")
+
+# Express eigenvalues as a percentage of total variation explained
+tot.var <- sum(pca1$eig)
+vals.df$PVE <- vals.df$PVE/tot.var *100
+
+# eig.plot <- barplot(vals, col = "darkgrey", main = paste0("Eigenvalues 1:", num_eigenvals) , las = 1)
+# eig.plot
+
+# Barplot
+eig.plot <- ggplot(data = vals.df, aes(x=PC, y=PVE)) + 
+  geom_bar(stat = "identity") + 
+  theme(axis.text.x=element_blank() #remove x axis labels
+        , axis.ticks.x=element_blank() #remove x axis ticks
+        #, axis.text.y=element_blank()  #remove y axis labels
+        #, axis.ticks.y=element_blank()  #remove y axis ticks
+        #, axis.title = element_blank()
+        , panel.background = element_blank()
+  )
+#eig.plot <- eig.plot + theme_bw()
+eig.plot
+
+
+## Plot
+# Legend within plot
+# pc1_v_pc2.plot  <- pc1_v_pc2.plot + theme(legend.justification = c(1,0), legend.position = c(1,0)
+#                              , legend.background = element_rect(colour = "black", fill = "white", linetype = "solid")
+#                              )
+# pc1_v_pc2.plot
+
+# Remove legend pc1 v pc2
+pc1_v_pc2.plot  <- pc1_v_pc2.plot + theme(legend.position = "none")
+pc1_v_pc2.plot  <- pc1_v_pc2.plot + annotation_custom(ggplotGrob(eig.plot)
+                                                       , xmin = 1, xmax = 5
+                                                       , ymin = -10, ymax = -3.5
+                    )
+
+pc1_v_pc2.plot
+
+
+
+
+# Legend inside panel second plot
+pc3_v_pc4.plot <- pc3_v_pc4.plot + theme(legend.justification = c(1,0), legend.position = c(1,0)
+                                         , legend.background = element_rect(colour = "black", fill = "white", linetype = "solid")
+                                )
+                                         
+# # Inset panel, second plot
+# pc3_v_pc4.plot + annotation_custom(ggplotGrob(eig.plot)
+#                                    , xmin = 1, xmax = 7
+#                                    , ymin = -15, ymax = -6
+#                                    )
+
+final.figure <- ggarrange(pc1_v_pc2.plot, pc3_v_pc4.plot
+                  , labels = c("A", "B")
+                  , ncol = 2, nrow = 1
+                  )
+
+
+pdf(file = "03_results/pca_composite_figure.pdf", width = 12, height = 6.5)
+print(final.figure)
+dev.off()
 
 # DAPC from genind
 dapc_from_genind(data = obj
