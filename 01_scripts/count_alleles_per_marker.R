@@ -20,4 +20,5 @@ write.table(x = data.df
             , file = "05-stacks/popn_out_microhaps/populations.haps_alleles_counts.txt"
             , sep = "\t"
             , row.names = F
+            , quote = F
             )
