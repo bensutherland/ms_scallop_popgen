@@ -146,9 +146,56 @@ abline(h = 0.5, lty = 2)
 abline(v = 0.5, lty = 2)
 dev.off()
 
+## Plot 2d density plot
+# example as basic scatterplot
+ggplot(data = all_per_loc_data.df, aes(x = Hobs.VIU, y = Hobs.JPN)) +
+  geom_point()
+
+# # Contour only
+# ggplot(data = all_per_loc_data.df, aes(x = Hobs.VIU, y = Hobs.JPN)) + 
+#   geom_density_2d()
+
+# # with colour and level
+# ggplot(data = all_per_loc_data.df, aes(x = Hobs.VIU, y = Hobs.JPN)) + 
+#   stat_density_2d(aes(fill = ..level..), geom = "polygon")
+  
+# # Contour only, coloured by level
+# ggplot(data = all_per_loc_data.df, aes(x = Hobs.VIU, y = Hobs.JPN)) + 
+#   stat_density_2d(aes(color = ..level..))
+
+# # Contour only, coloured by level, modify BINS
+# ggplot(data = all_per_loc_data.df, aes(x = Hobs.VIU, y = Hobs.JPN)) + 
+#   stat_density_2d(bins = 20, aes(color = ..level..))
+
+# Contour only, coloured by level, modify BINS, add points
+plot <-ggplot(data = all_per_loc_data.df, aes(x = Hobs.VIU, y = Hobs.JPN)) + 
+        stat_density_2d(bins = 17, aes(color = ..level..)) + 
+        geom_point(alpha = 0.05) + 
+        theme_bw() + 
+        xlab(bquote(H[OBS]*" VIU")) +
+        ylab(bquote(H[OBS]*" JPN"))
+plot
+
+pdf(file = "03_results/popn_sp_hobs_calc/per_locus_hobs_VIU_vs_JPN_contours.pdf", width = 6, height = 5)
+plot
+dev.off()
+
+# ggplot(data = all_per_loc_data.df, aes(x = Hobs.VIU, y = Hobs.JPN)) + 
+#   geom_bin2d() +
+#   theme_bw()
+# 
+# ggplot(data = all_per_loc_data.df, aes(x = Hobs.VIU, y = Hobs.JPN)) + 
+#   geom_bin2d(bins = 20) +
+#   scale_fill_continuous(type = "viridis") +
+#   theme_bw()
+
+# How many loci in the specific range of interest? 
+table(all_per_loc_data.df$Hobs.JPN > 0.3 & all_per_loc_data.df$Hobs.VIU > 0.3) # 756
+table(all_per_loc_data.df$Hobs.JPN < 0.2 & all_per_loc_data.df$Hobs.VIU < 0.2) # 1,209
+
+
 ## Write out results
 write.csv(x = all_per_loc_data.df, file = "03_results/popn_sp_hobs_calc/popn_sp_JPN_VIU_HOBS.csv", quote = F)
-
 
 #### 03. Multivariate analysis ####
 obj
