@@ -368,8 +368,62 @@ obj
 relatedness_calc(data = obj, datatype = "SNP") # will output as "03_results/kinship_analysis_<date>.Rdata"
 
 # Plot
-relatedness_plot(file = "03_results/kinship_analysis_2023-01-06.Rdata", same_pops = TRUE, plot_by = "codes", pdf_width = 7, pdf_height = 5)
+relatedness_plot(file = "03_results/kinship_analysis_2023-09-21.Rdata", same_pops = TRUE, plot_by = "codes", pdf_width = 7, pdf_height = 5)
 
+# Manually, as it appears not to be exported by the function currently
+# Save out results
+date <- format(Sys.time(), "%Y-%m-%d")
+
+write.table(x = output$relatedness
+            , file = paste0(result.path, "pairwise_relatedness_output_all_", date, ".txt")
+            , row.names = F
+            , quote = F
+            , sep = "\t"
+)
+
+# Inspect relatedness
+gc()
+names(output) # the result of relatedness calc
+head(output$relatedness)
+dim(output$relatedness)
+output_reduced.df <- output$relatedness[output$relatedness$group=="BCBC" 
+                                        | output$relatedness$group=="JPJP"
+                                        | output$relatedness$group=="VIVI", ]
+
+dim(output_reduced.df)
+write.csv(x = output_reduced.df, file = "03_results/relatedness_results_same_only.csv", quote = F
+          , row.names = F)
+
+# Use function to identify the putative close kin
+source("~/Documents/pyes/simple_pop_stats_pyes/01_scripts/dev/id_close_kin.R", echo=TRUE)
+id_close_kin(cutoff = 0.25, statistic = "ritland")
+drop.list
+
+drop.inds <- c(drop.list$BCBC, drop.list$VIVI)
+
+obj
+table(pop(obj))
+
+keep.inds <- setdiff(x = indNames(obj), y = drop.inds)
+obj_sibs_purged <- obj[keep.inds]
+obj_sibs_purged
+table(pop(obj_sibs_purged))
+
+maf_filt(data = obj_sibs_purged, maf = 0.01)
+
+obj_maf_filt
+
+# PCA from genind
+pca_from_genind(data = obj_maf_filt
+                , PCs_ret = 4
+                , plot_eigen = TRUE
+                , plot_allele_loadings = TRUE
+                , retain_pca_obj = TRUE
+                , colour_file = "00_archive/formatted_cols.csv"
+)
+
+# FST recalculated
+calculate_FST(format = "genind", dat = obj_maf_filt, separated = FALSE, bootstrap = TRUE)
 
 
 ## Inbreeding
