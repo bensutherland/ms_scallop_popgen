@@ -3,7 +3,7 @@
 # Initialized 2022-12-05
 # Requires first running "ms_scallop_popgen/01_scripts/02_sps_char_and_filt.R"
 
-install.packages("ggpubr")
+#install.packages("ggpubr")
 require("ggpubr")
 
 #### 01. Load Data ####
@@ -201,6 +201,10 @@ write.csv(x = all_per_loc_data.df, file = "03_results/popn_sp_hobs_calc/popn_sp_
 obj
 
 ## Multivariate
+# For an unknown reason, sps currently requires a
+#   manual sourcing of the function to properly use the retain_pca_obj function
+source("~/Documents/pyes/simple_pop_stats_pyes/01_scripts/utilities/pca_from_genind.r", echo=TRUE)
+
 # PCA from genind
 pca_from_genind(data = obj
                 , PCs_ret = 4
@@ -210,49 +214,37 @@ pca_from_genind(data = obj
                 , colour_file = "00_archive/formatted_cols.csv"
                 )
 
+
 ## Prepare an eigenvalue plot for inset
 num_eigenvals <- 10
-vals.df <- as.data.frame(pca1$eig[1:num_eigenvals])
+vals.df <- as.data.frame(pca.obj$eig[1:num_eigenvals])
 colnames(vals.df)[1] <- "vals"
 vals.df$pc <- seq(1:num_eigenvals)
 vals.df
 colnames(vals.df) <- c("PVE", "PC")
 
 # Express eigenvalues as a percentage of total variation explained
-tot.var <- sum(pca1$eig)
+tot.var <- sum(pca.obj$eig)
 vals.df$PVE <- vals.df$PVE/tot.var *100
-
-# eig.plot <- barplot(vals, col = "darkgrey", main = paste0("Eigenvalues 1:", num_eigenvals) , las = 1)
-# eig.plot
 
 # Barplot
 eig.plot <- ggplot(data = vals.df, aes(x=PC, y=PVE)) + 
   geom_bar(stat = "identity") + 
   theme(axis.text.x=element_blank() #remove x axis labels
         , axis.ticks.x=element_blank() #remove x axis ticks
-        #, axis.text.y=element_blank()  #remove y axis labels
-        #, axis.ticks.y=element_blank()  #remove y axis ticks
-        #, axis.title = element_blank()
         , panel.background = element_blank()
   )
-#eig.plot <- eig.plot + theme_bw()
+
 eig.plot
 
 
 ## Plot
-# Legend within plot
-# pc1_v_pc2.plot  <- pc1_v_pc2.plot + theme(legend.justification = c(1,0), legend.position = c(1,0)
-#                              , legend.background = element_rect(colour = "black", fill = "white", linetype = "solid")
-#                              )
-# pc1_v_pc2.plot
-
 # Remove legend pc1 v pc2
 pc1_v_pc2.plot  <- pc1_v_pc2.plot + theme(legend.position = "none")
 pc1_v_pc2.plot  <- pc1_v_pc2.plot + annotation_custom(ggplotGrob(eig.plot)
                                                        , xmin = 1, xmax = 5
                                                        , ymin = -10, ymax = -3.5
                     )
-
 pc1_v_pc2.plot
 
 
@@ -262,12 +254,7 @@ pc1_v_pc2.plot
 pc3_v_pc4.plot <- pc3_v_pc4.plot + theme(legend.justification = c(1,0), legend.position = c(1,0)
                                          , legend.background = element_rect(colour = "black", fill = "white", linetype = "solid")
                                 )
-                                         
-# # Inset panel, second plot
-# pc3_v_pc4.plot + annotation_custom(ggplotGrob(eig.plot)
-#                                    , xmin = 1, xmax = 7
-#                                    , ymin = -15, ymax = -6
-#                                    )
+pc3_v_pc4.plot
 
 final.figure <- ggarrange(pc1_v_pc2.plot, pc3_v_pc4.plot
                   , labels = c("A", "B")
@@ -279,17 +266,6 @@ pdf(file = "03_results/pca_composite_figure.pdf", width = 12, height = 6.5)
 print(final.figure)
 dev.off()
 
-# DAPC from genind
-dapc_from_genind(data = obj
-                 , plot_allele_loadings = TRUE
-                 , colour_file = "00_archive/formatted_cols.csv"
-                 , n.pca = 10, n.da = 2
-                 , scree.da = TRUE
-                 , posi.pca = "topright"
-                 , scree.pca = TRUE
-                 , dapc.width = 7
-                 , dapc.height = 5
-                 )
 
 #### 04. Genetic differentiation and private alleles  ####
 calculate_FST(format = "genind", dat = obj, separated = FALSE, bootstrap = TRUE)
@@ -301,8 +277,6 @@ head(pa.t)
 table(pa.t[,"BC"] > 0)
 table(pa.t[,"JPN"] > 0)
 table(pa.t[,"VIU"] > 0)
-
-table(pop(regional_obj))
 
 write.csv(x = pa, file = "03_results/private_alleles.csv", quote = F)
 
@@ -395,6 +369,8 @@ relatedness_calc(data = obj, datatype = "SNP") # will output as "03_results/kins
 
 # Plot
 relatedness_plot(file = "03_results/kinship_analysis_2023-01-06.Rdata", same_pops = TRUE, plot_by = "codes", pdf_width = 7, pdf_height = 5)
+
+
 
 ## Inbreeding
 # Estimating inbreeding (from adegenet tutorial)
