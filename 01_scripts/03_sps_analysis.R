@@ -203,7 +203,7 @@ obj
 ## Multivariate
 # For an unknown reason, sps currently requires a
 #   manual sourcing of the function to properly use the retain_pca_obj function
-source("~/Documents/pyes/simple_pop_stats_pyes/01_scripts/utilities/pca_from_genind.r", echo=TRUE)
+source("~/Documents/pyes/simple_pop_stats/01_scripts/utilities/pca_from_genind.r", echo=TRUE)
 
 # PCA from genind
 pca_from_genind(data = obj
@@ -214,6 +214,7 @@ pca_from_genind(data = obj
                 , colour_file = "00_archive/formatted_cols.csv"
                 )
 
+file.copy(from = "03_results/pca_scores_per_sample.txt", to = "03_results/pca_scores_per_sample_sibs_incl.txt")
 
 ## Prepare an eigenvalue plot for inset
 num_eigenvals <- 10
@@ -235,8 +236,6 @@ eig.plot <- ggplot(data = vals.df, aes(x=PC, y=PVE)) +
         , panel.background = element_blank()
   )
 
-eig.plot
-
 
 ## Plot
 # Remove legend pc1 v pc2
@@ -245,38 +244,33 @@ pc1_v_pc2.plot  <- pc1_v_pc2.plot + annotation_custom(ggplotGrob(eig.plot)
                                                        , xmin = 1, xmax = 5
                                                        , ymin = -10, ymax = -3.5
                     )
-pc1_v_pc2.plot
-
-
-
 
 # Legend inside panel second plot
 pc3_v_pc4.plot <- pc3_v_pc4.plot + theme(legend.justification = c(1,0), legend.position = c(1,0)
                                          , legend.background = element_rect(colour = "black", fill = "white", linetype = "solid")
                                 )
-pc3_v_pc4.plot
 
 final.figure <- ggarrange(pc1_v_pc2.plot, pc3_v_pc4.plot
                   , labels = c("A", "B")
                   , ncol = 2, nrow = 1
                   )
 
-
-pdf(file = "03_results/pca_composite_figure.pdf", width = 12, height = 6.5)
+pdf(file = "03_results/pca_composite_figure_w_close_kin.pdf", width = 12, height = 6.5)
 print(final.figure)
 dev.off()
 
 
 #### 04. Genetic differentiation and private alleles  ####
-calculate_FST(format = "genind", dat = obj, separated = FALSE, bootstrap = TRUE)
+# This is moved down now, because it should be calculated with putative close-kin removed
+# calculate_FST(format = "genind", dat = obj, separated = FALSE, bootstrap = TRUE)
 
 ## Private alleles
 pa <- private_alleles(gid = obj)
 pa.t <- t(pa)
 head(pa.t)
-table(pa.t[,"BC"] > 0)
-table(pa.t[,"JPN"] > 0)
-table(pa.t[,"VIU"] > 0)
+table(pa.t[,"BC"] > 0)  #   58
+table(pa.t[,"JPN"] > 0) # 1401
+table(pa.t[,"VIU"] > 0) #  270
 
 write.csv(x = pa, file = "03_results/private_alleles.csv", quote = F)
 
@@ -360,42 +354,32 @@ text(x = 0.375, y = 400, labels = paste0("median = ", round(median(myFreq.CAN.pa
 dev.off()
 
 
-#### 05. Relatedness and Inbreeding ####
+#### 05. Relatedness ####
 obj
 
 ## Relatedness
 # Calculate inter-individual relatedness
 relatedness_calc(data = obj, datatype = "SNP") # will output as "03_results/kinship_analysis_<date>.Rdata"
+gc()
 
 # Plot
-relatedness_plot(file = "03_results/kinship_analysis_2023-09-21.Rdata", same_pops = TRUE, plot_by = "codes", pdf_width = 7, pdf_height = 5)
-
-# Manually, as it appears not to be exported by the function currently
-# Save out results
-date <- format(Sys.time(), "%Y-%m-%d")
-
-write.table(x = output$relatedness
-            , file = paste0(result.path, "pairwise_relatedness_output_all_", date, ".txt")
-            , row.names = F
-            , quote = F
-            , sep = "\t"
-)
+relatedness_plot(file = "03_results/kinship_analysis_2023-09-22.Rdata", same_pops = TRUE, plot_by = "codes", pdf_width = 7, pdf_height = 5)
 
 # Inspect relatedness
-gc()
-names(output) # the result of relatedness calc
 head(output$relatedness)
-dim(output$relatedness)
+dim(output$relatedness) # 14,878 pairs
 output_reduced.df <- output$relatedness[output$relatedness$group=="BCBC" 
                                         | output$relatedness$group=="JPJP"
                                         | output$relatedness$group=="VIVI", ]
 
-dim(output_reduced.df)
+dim(output_reduced.df)  # 5,231 pairs
+
+# Write out the same-on-same output
 write.csv(x = output_reduced.df, file = "03_results/relatedness_results_same_only.csv", quote = F
           , row.names = F)
 
 # Use function to identify the putative close kin
-source("~/Documents/pyes/simple_pop_stats_pyes/01_scripts/dev/id_close_kin.R", echo=TRUE)
+source("~/Documents/pyes/simple_pop_stats/01_scripts/dev/id_close_kin.R", echo=TRUE)
 id_close_kin(cutoff = 0.25, statistic = "ritland")
 drop.list
 
@@ -413,6 +397,7 @@ maf_filt(data = obj_sibs_purged, maf = 0.01)
 
 obj_maf_filt
 
+#### 06. Redone analyses after sibs purged ####
 # PCA from genind
 pca_from_genind(data = obj_maf_filt
                 , PCs_ret = 4
@@ -422,56 +407,106 @@ pca_from_genind(data = obj_maf_filt
                 , colour_file = "00_archive/formatted_cols.csv"
 )
 
+file.copy(from = "03_results/pca_scores_per_sample.txt", to = "03_results/pca_scores_per_sample_sibs_purged.txt")
+
+## Prepare an eigenvalue plot for inset
+num_eigenvals <- 10
+vals.df <- as.data.frame(pca.obj$eig[1:num_eigenvals])
+colnames(vals.df)[1] <- "vals"
+vals.df$pc <- seq(1:num_eigenvals)
+vals.df
+colnames(vals.df) <- c("PVE", "PC")
+
+# Express eigenvalues as a percentage of total variation explained
+tot.var <- sum(pca.obj$eig)
+vals.df$PVE <- vals.df$PVE/tot.var *100
+
+# Barplot
+eig.plot <- ggplot(data = vals.df, aes(x=PC, y=PVE)) + 
+  geom_bar(stat = "identity") + 
+  theme(axis.text.x=element_blank() #remove x axis labels
+        , axis.ticks.x=element_blank() #remove x axis ticks
+        , panel.background = element_blank()
+  )
+
+
+## Plot
+# Remove legend pc1 v pc2
+pc1_v_pc2.plot  <- pc1_v_pc2.plot + theme(legend.position = "none")
+pc1_v_pc2.plot  <- pc1_v_pc2.plot + annotation_custom(ggplotGrob(eig.plot)
+                                                      , xmin = -4, xmax = -0.5
+                                                      , ymin = -10, ymax = -5
+)
+
+# Legend inside panel second plot
+pc3_v_pc4.plot <- pc3_v_pc4.plot + theme(legend.justification = c(1,0), legend.position = c(1,0)
+                                         , legend.background = element_rect(colour = "black", fill = "white", linetype = "solid")
+)
+
+final.figure <- ggarrange(pc1_v_pc2.plot, pc3_v_pc4.plot
+                          , labels = c("A", "B")
+                          , ncol = 2, nrow = 1
+)
+
+pdf(file = "03_results/pca_composite_figure_close_kin_purged.pdf", width = 12, height = 6.5)
+print(final.figure)
+dev.off()
+
 # FST recalculated
 calculate_FST(format = "genind", dat = obj_maf_filt, separated = FALSE, bootstrap = TRUE)
 
+# Per locus stats recalculated
+dir.create(path = "03_results/purged_sibs_per_locus_stats")
+per_locus_stats(data = obj_maf_filt)
+file.copy(from = "03_results/per_locus_stats_2023-09-22.txt", to = "03_results/purged_sibs_per_locus_stats/per_locus_stats_purged_sibs.txt")
 
-## Inbreeding
-# Estimating inbreeding (from adegenet tutorial)
-obj_BC  <- seppop(x = obj)$BC
-obj_JPN <- seppop(x = obj)$JPN
-obj_VIU <- seppop(x = obj)$VIU
 
-# Use likelihood-based estimate of inbreeding to compute inbreeding coefficient of an individual (F)
-# estimate inbreeding and return a sample of F values (# Note: warnings occur)
-F_coeff_BC  <- inbreeding(x = obj_BC, N = 200)   # Calculates 100 values for each sample and outputs as a list
-F_coeff_JPN <- inbreeding(x = obj_JPN, N = 200) 
-F_coeff_VIU <- inbreeding(x = obj_VIU, N = 200) 
-
-# Note: receiving warnings in all the above
-
-# ## plot the first 10 results (for first ten individuals) (example using BC)
-pdf(file = "03_results/per_popn_mean_per_indiv_F_val.pdf", width = 6, height = 7)
-par(mfrow=c(3,1))
-
-## Compute means for all individuals
-Fmean_BC <- sapply(F_coeff_BC, mean) # Provides the average value per individual
-hist(Fmean_BC, col="grey", xlab="mean value of F",
-     main="Per-indiv average F (BC)"
-     , xlim = c(0.4, 0.6)
-     , las = 1
-)
-
-#text(x = 0.8, y = 5, label = paste0("mean = ", round(mean(sapply(F_coeff_BC, mean)), digits = 3)))
-
-Fmean_JPN <- sapply(F_coeff_JPN, mean)
-hist(Fmean_JPN, col="grey", xlab="mean value of F",
-     main="Per-indiv average F (JPN)"
-     , xlim = c(0.4, 0.6)
-     , las = 1
-)
-
-#text(x = 0.8, y = 15, label = paste0("mean = ", round(mean(sapply(F_coeff_JPN, mean)), digits = 3)))
-
-Fmean_VIU <- sapply(F_coeff_VIU, mean)
-hist(Fmean_VIU, col="grey", xlab="mean value of F",
-     main="Per-indiv average F (VIU)"
-     , xlim = c(0.4, 0.6)
-     , las = 1
-)
-
-#text(x = 0.8, y = 10, label = paste0("mean = ", round(mean(sapply(F_coeff_VIU, mean)), digits = 3)))
-dev.off()
+# ## Inbreeding
+# # Estimating inbreeding (from adegenet tutorial)
+# obj_BC  <- seppop(x = obj)$BC
+# obj_JPN <- seppop(x = obj)$JPN
+# obj_VIU <- seppop(x = obj)$VIU
+# 
+# # Use likelihood-based estimate of inbreeding to compute inbreeding coefficient of an individual (F)
+# # estimate inbreeding and return a sample of F values (# Note: warnings occur)
+# F_coeff_BC  <- inbreeding(x = obj_BC, N = 200)   # Calculates 100 values for each sample and outputs as a list
+# F_coeff_JPN <- inbreeding(x = obj_JPN, N = 200) 
+# F_coeff_VIU <- inbreeding(x = obj_VIU, N = 200) 
+# 
+# # Note: receiving warnings in all the above
+# 
+# # ## plot the first 10 results (for first ten individuals) (example using BC)
+# pdf(file = "03_results/per_popn_mean_per_indiv_F_val.pdf", width = 6, height = 7)
+# par(mfrow=c(3,1))
+# 
+# ## Compute means for all individuals
+# Fmean_BC <- sapply(F_coeff_BC, mean) # Provides the average value per individual
+# hist(Fmean_BC, col="grey", xlab="mean value of F",
+#      main="Per-indiv average F (BC)"
+#      , xlim = c(0.4, 0.6)
+#      , las = 1
+# )
+# 
+# #text(x = 0.8, y = 5, label = paste0("mean = ", round(mean(sapply(F_coeff_BC, mean)), digits = 3)))
+# 
+# Fmean_JPN <- sapply(F_coeff_JPN, mean)
+# hist(Fmean_JPN, col="grey", xlab="mean value of F",
+#      main="Per-indiv average F (JPN)"
+#      , xlim = c(0.4, 0.6)
+#      , las = 1
+# )
+# 
+# #text(x = 0.8, y = 15, label = paste0("mean = ", round(mean(sapply(F_coeff_JPN, mean)), digits = 3)))
+# 
+# Fmean_VIU <- sapply(F_coeff_VIU, mean)
+# hist(Fmean_VIU, col="grey", xlab="mean value of F",
+#      main="Per-indiv average F (VIU)"
+#      , xlim = c(0.4, 0.6)
+#      , las = 1
+# )
+# 
+# #text(x = 0.8, y = 10, label = paste0("mean = ", round(mean(sapply(F_coeff_VIU, mean)), digits = 3)))
+# dev.off()
 
 
 # single SNP per locus analysis is complete
